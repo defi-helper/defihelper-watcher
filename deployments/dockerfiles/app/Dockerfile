@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run server:build
-RUN npm run website:build
+RUN npm run client:build
 
 FROM node:16-alpine
 WORKDIR /app
