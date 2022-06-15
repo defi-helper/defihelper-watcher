@@ -43,44 +43,44 @@ ingress:
       hosts:
         - watcher-dev.defihelper.info
 
-#broker:
-#  maxReplicas: 2
-#  maxReadyMessagesForHpa: 25
-#  process:
-#    labels:
-#      app: app
-#      component: broker
-#      environment: dev
-#      queue: process
-#    queues:
-#      queue:
-#        name: queue
-#        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-consume -- -q watcher_tasks_default"'
-#        replicas: 5
-#        resources:
-#          requests:
-#            memory: 256Mi
-#            cpu: 200m
-#          limits:
-#            memory: 512Mi
-#            cpu: 500m
+broker:
+  maxReplicas: 10
+  maxReadyMessagesForHpa: 25
+  process:
+    labels:
+      app: app
+      component: broker
+      environment: dev
+      queue: process
+    queues:
+      resolve_eth:
+        name: resolve_eth
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 200m
+          limits:
+            memory: 512Mi
+            cpu: 500m
 
-handlers:
-  labels:
-    app: watcher
-    component: cronHandler
-    environment: dev
-  resources:
-    requests:
-      memory: 128Mi
-      cpu: 200m
-    limits:
-      memory: 256Mi
-      cpu: 300m
-  schedules:
-    queue-deferred:
-      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-deferred"'
-      schedule: "* * * * *"
+#handlers:
+#  labels:
+#    app: watcher
+#    component: cronHandler
+#    environment: dev
+#  resources:
+#    requests:
+#      memory: 128Mi
+#      cpu: 200m
+#    limits:
+#      memory: 256Mi
+#      cpu: 300m
+#  schedules:
+#    queue-deferred:
+#      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-deferred"'
+#      schedule: "* * * * *"
 
 autoscaling:
   enabled: false
