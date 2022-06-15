@@ -1,0 +1,70 @@
+include:
+  - project: 'devops/gitlab-ci-templates'
+    ref: master
+    file: 'build-image.template.yaml'
+  - project: 'devops/gitlab-ci-templates'
+    ref: master
+    file: 'helm.template.yaml'
+
+default:
+  tags:
+    - adcorn-dev
+
+variables:
+  APP_NAME: "watcher"
+  APP_NAMESPACE: "${CI_PROJECT_ROOT_NAMESPACE}-${CI_PROJECT_NAME}"
+  ENVIRONMENT: dev
+  KUBECONFIG_B64: $DEV_KUBECONFIG_B64
+  CONFIG: $DEV_CONFIG
+
+stages:
+  - build
+  - deploy
+
+build:app:
+  stage: build
+  variables:
+    KUBERNETES_CPU_REQUEST: 500m
+    KUBERNETES_CPU_LIMIT: 2
+    KUBERNETES_MEMORY_REQUEST: 1024Mi
+    KUBERNETES_MEMORY_LIMIT: 1024Mi
+    APP_NAME: "app"
+  extends: .build_image
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+      variables:
+        BUILD_ARGS: "--build-arg NODE_ENV=development"
+    - if: $CI_COMMIT_REF_NAME == "release"
+      variables:
+        BUILD_ARGS: "--build-arg NODE_ENV=production"
+        ENVIRONMENT: prod
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH'
+
+build:nginx:
+  stage: build
+  variables:
+    APP_NAME: "nginx"
+  extends: .build_image
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+      variables:
+        BUILD_ARGS: "--build-arg NODE_ENV=development"
+    - if: $CI_COMMIT_REF_NAME == "release"
+      variables:
+        BUILD_ARGS: "--build-arg NODE_ENV=production"
+        ENVIRONMENT: prod
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH'
+
+deploy:
+  extends: .helm_upgrade
+  stage: deploy
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+    - if: '$CI_COMMIT_REF_NAME == "release"'
+      variables:
+        KUBECONFIG_B64: $PROD_KUBECONFIG_B64
+        ENVIRONMENT: prod
+        CONFIG: $PROD_CONFIG
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+
