@@ -20,14 +20,16 @@ container.model
     server.listen(8080, () => console.log(`Listen 8080`));
 
     const rabbit = container.rabbitmq();
-    await rabbit.createQueue(
-      'scanner_events_ws',
-      { durable: false, exclusive: true },
-      (msg, ack) => {
-        const data = msg.content.toString();
-        ws.clients.forEach((client) => client.readyState === WebSocket.OPEN && client.send(data));
-        ack();
-      },
-    );
-    rabbit.bindToTopic('scanner_events_ws', 'scanner.events.*');
+    rabbit.on('connected', async () => {
+      await rabbit.createQueue(
+        'scanner_events_ws',
+        { durable: false, autoDelete: true },
+        (msg, ack) => {
+          const data = msg.content.toString();
+          ws.clients.forEach((client) => client.readyState === WebSocket.OPEN && client.send(data));
+          ack();
+        },
+      );
+      rabbit.bindToTopic('scanner_events_ws', 'scanner.events.*');
+    });
   });

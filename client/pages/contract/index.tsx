@@ -1,5 +1,6 @@
-import { Pagination } from "../../components/pagination";
-import React, { useState, useEffect, useReducer } from "react";
+import { Pagination } from '../../components/pagination';
+import React, { useState, useEffect, useReducer } from 'react';
+import { BigNumber as BN } from 'bignumber.js';
 import {
   Contract,
   getContract,
@@ -9,18 +10,17 @@ import {
   createEventListener,
   updateEventListener,
   getEventListenerCount,
-} from "../../api";
-import { Modal } from "../../components/modal";
+} from '../../api';
+import { Modal } from '../../components/modal';
 
 interface EventListenerState {
   id?: string;
   name: string;
-  syncHeight: number;
 }
 
 type EventListenerAction =
-  | { type: "setName"; value: string }
-  | { type: "setSyncHeight"; value: number };
+  | { type: 'setName'; value: string }
+  | { type: 'setSyncHeight'; value: number };
 
 function EventListenerForm(props: {
   contract: Contract;
@@ -29,18 +29,18 @@ function EventListenerForm(props: {
   onSave: (eventListenerState: EventListenerState) => any;
 }) {
   const events = (props.contract.abi ?? [])
-    .filter(({ type }) => type === "event")
+    .filter(({ type }) => type === 'event')
     .map(({ name }) => name);
   const [eventListenerState, eventListenerDispatcher] = useReducer(
     (state: EventListenerState, action: EventListenerAction) => {
       switch (action.type) {
-        case "setName":
+        case 'setName':
           return { ...state, name: action.value };
         default:
           return state;
       }
     },
-    props.state
+    props.state,
   );
 
   return (
@@ -52,7 +52,7 @@ function EventListenerForm(props: {
           value={eventListenerState.name}
           onChange={(e) =>
             eventListenerDispatcher({
-              type: "setName",
+              type: 'setName',
               value: e.target.value,
             })
           }
@@ -63,7 +63,7 @@ function EventListenerForm(props: {
             </option>
           ))}
         </select>
-        <div style={{ color: "red" }}>{props.error}</div>
+        <div style={{ color: 'red' }}>{props.error}</div>
         <button onClick={() => props.onSave(eventListenerState)}>Save</button>
       </fieldset>
     </form>
@@ -81,22 +81,33 @@ function EventListenerComponent({
   onUpdate: (listener: EventListener) => any;
   onDelete: (listener: EventListener) => any;
 }) {
+  const { sync } = eventListener;
   return (
     <tr>
-      <td style={{ width: "50%" }}>
+      <td>
         <a href={`/contract/${contract.id}/event-listener/${eventListener.id}`}>
           {eventListener.name}
         </a>
       </td>
-      <td style={{ width: "50%" }}>
-        <div style={{ textAlign: "right" }}>
+      <td>
+        <div className="progress">
+          <span
+            className={sync.progress < 100 ? 'green' : 'red'}
+            style={{
+              width: `${sync.progress}%`,
+            }}
+          ></span>
+        </div>
+        <div>
+          {sync.syncHeight}/{sync.currentBlock}
+        </div>
+      </td>
+      <td>
+        <div style={{ textAlign: 'right' }}>
           <button className="button" onClick={() => onUpdate(eventListener)}>
             Update
           </button>
-          <button
-            className="button button-outline"
-            onClick={() => onDelete(eventListener)}
-          >
+          <button className="button button-outline" onClick={() => onDelete(eventListener)}>
             Delete
           </button>
         </div>
@@ -110,32 +121,31 @@ export interface Props {
 }
 
 export function ContractPage({ contractId }: Props) {
-  const [name, setName] = useState<string>("0");
+  const [name, setName] = useState<string>('0');
   const [contract, setContract] = useState<Contract | Error | null>(null);
   const eventListenersLimit = 10;
   const [eventListenersPage, setEventListenersPage] = useState<number>(1);
   const [eventListeners, setEventListeners] = useState<EventListener[]>([]);
   const [eventListenersCount, setEventListenersCount] = useState<number>(0);
-  const [eventListenerForm, setEventListenerForm] =
-    useState<EventListenerState | null>(null);
-  const [addModalError, setAddModalError] = useState<string>("");
+  const [eventListenerForm, setEventListenerForm] = useState<EventListenerState | null>(null);
+  const [addModalError, setAddModalError] = useState<string>('');
 
   const onReloadEventListenerList = () => {
     const filter = {
-      name: name !== "0" ? name : undefined,
+      name: name !== '0' ? name : undefined,
     };
     getEventListenerList(
       contractId,
       filter,
       eventListenersLimit,
-      (eventListenersPage - 1) * eventListenersLimit
+      (eventListenersPage - 1) * eventListenersLimit,
     ).then(setEventListeners);
     getEventListenerCount(contractId, filter).then(setEventListenersCount);
   };
 
   const onDelete = async (eventListener: EventListener) => {
     if (contract === null || contract instanceof Error) return;
-    if (!confirm("Are you sure?")) return;
+    if (!confirm('Are you sure?')) return;
 
     await deleteEventListener(contract.id, eventListener.id);
     onReloadEventListenerList();
@@ -144,17 +154,12 @@ export function ContractPage({ contractId }: Props) {
   const onSave = async (state: EventListenerState) => {
     if (contract === null || contract instanceof Error) return;
 
-    setAddModalError("");
+    setAddModalError('');
     try {
       if (state.id !== undefined) {
-        await updateEventListener(
-          contract.id,
-          state.id,
-          state.name,
-          state.syncHeight
-        );
+        await updateEventListener(contract.id, state.id, state.name);
       } else {
-        await createEventListener(contract.id, state.name, state.syncHeight);
+        await createEventListener(contract.id, state.name);
       }
       setEventListenerForm(null);
       onReloadEventListenerList();
@@ -169,7 +174,7 @@ export function ContractPage({ contractId }: Props) {
         setContract(contract);
         onReloadEventListenerList();
       })
-      .catch(() => setContract(new Error("Contract not found")));
+      .catch(() => setContract(new Error('Contract not found')));
   }, []);
 
   useEffect(() => {
@@ -185,7 +190,7 @@ export function ContractPage({ contractId }: Props) {
   }
 
   const eventNames = (contract.abi ?? [])
-    .filter(({ type }) => type === "event")
+    .filter(({ type }) => type === 'event')
     .map(({ name }) => name);
 
   return (
@@ -213,7 +218,8 @@ export function ContractPage({ contractId }: Props) {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Actions</th>
+              <th>Progress</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -222,9 +228,7 @@ export function ContractPage({ contractId }: Props) {
                 eventListener={eventListener}
                 contract={contract}
                 key={eventListener.id}
-                onUpdate={(eventListener) =>
-                  setEventListenerForm(eventListener)
-                }
+                onUpdate={(eventListener) => setEventListenerForm(eventListener)}
                 onDelete={onDelete}
               />
             ))}
@@ -242,11 +246,10 @@ export function ContractPage({ contractId }: Props) {
             onClick={() =>
               setEventListenerForm({
                 name: (
-                  (contract.abi ?? []).find(({ type }) => type === "event") ?? {
-                    name: "",
+                  (contract.abi ?? []).find(({ type }) => type === 'event') ?? {
+                    name: '',
                   }
                 ).name,
-                syncHeight: contract.startHeight,
               })
             }
           >

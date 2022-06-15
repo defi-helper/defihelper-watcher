@@ -91,7 +91,6 @@ container.model
 
           return Promise.all(
             contracts.map(async ({ id, abi, network, address }) => {
-              if (abi === null) return [];
               const contract = container.blockchain.contract(address, abi, provider);
               const listeners = await container.model
                 .contractEventListenerTable()

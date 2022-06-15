@@ -1,5 +1,5 @@
 import { SchemaBuilder } from 'knex';
-import { walletInteractionTableName } from '@models/WalletInteraction/Entity';
+import { walletInteractionTableName } from '@models/Interaction/Entity';
 
 export default (schema: SchemaBuilder) => {
   return schema.createTable(walletInteractionTableName, (table) => {
@@ -9,7 +9,7 @@ export default (schema: SchemaBuilder) => {
     table.string('network', 10).notNullable().index();
     table.string('eventName', 64).notNullable().index();
     table.dateTime('createdAt').notNullable();
-    table.unique(['wallet', 'contract', 'network']);
+    table.unique(['wallet', 'contract', 'network', 'eventName']);
     table.primary(['id'], `${walletInteractionTableName}_pkey`);
   });
 };

@@ -27,11 +27,7 @@ export class QueueService {
 
   static readonly defaultTopic = 'default';
 
-  constructor(
-    readonly table: Factory<Table>,
-    readonly rabbitmq: Factory<Rabbit>,
-    readonly log: Factory<Log>,
-  ) {}
+  constructor(readonly table: Factory<Table>, readonly rabbitmq: Rabbit, readonly logger: Log) {}
 
   async resetAndRestart(task: Task) {
     const updated = {
@@ -75,7 +71,7 @@ export class QueueService {
         ...task,
         status: TaskStatus.Process,
       });
-      await this.rabbitmq()
+      await this.rabbitmq
         .publishTopic(`scanner.tasks.${task.handler}.${task.topic}`, task, {
           priority: task.priority,
         })
@@ -97,14 +93,17 @@ export class QueueService {
   async handle(task: Task) {
     const process = new Process(task);
     try {
-      const { task: result } = await Handlers[task.handler].default(process);
-      return await this.table().update(result).where('id', task.id);
+      const result = await Handlers[task.handler].default(process);
+      if (result.addedInfo !== '') {
+        this.logger.info(`queue:${task.handler}, ${task.id} ${result.addedInfo}`);
+      }
+      return await this.table().update(result.task).where('id', task.id);
     } catch (e) {
       const error = e instanceof Error ? e : new Error(`${e}`);
 
       return Promise.all([
         this.table().update(process.error(error).task).where('id', task.id),
-        this.log().info(`queue:${task.handler}, ${task.id} ${error.stack ?? error}`),
+        this.logger.error(`queue:${task.handler}, ${task.id} ${error.stack ?? error}`),
       ]);
     }
   }
@@ -136,7 +135,7 @@ export class QueueService {
         const isLocked = await this.lock(task);
         if (!isLocked) return;
 
-        await this.rabbitmq().publishTopic(`scanner.tasks.${task.handler}.${task.topic}`, task, {
+        await this.rabbitmq.publishTopic(`scanner.tasks.${task.handler}.${task.topic}`, task, {
           priority: task.priority,
         });
       }),
@@ -145,14 +144,13 @@ export class QueueService {
 
   async consumer(msg: any, ack: (error?: any, reply?: any) => any) {
     const task: Task = JSON.parse(msg.content.toString());
-    this.log().info(`Handle task: ${task.id}`);
-    console.warn(task);
+    console.info(`Handle task: ${task.id}`);
     await this.handle(task);
     ack();
   }
 
   consume({ queue }: ConsumerOptions) {
-    this.rabbitmq().createQueue(
+    this.rabbitmq.createQueue(
       queue ?? 'scanner_tasks_default',
       { durable: false },
       this.consumer.bind(this),

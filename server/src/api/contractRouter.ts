@@ -1,7 +1,9 @@
-import { Contract, EventListener } from '@models/Contract/Entity';
+import { Contract, EventListener, eventListenerTableName } from '@models/Contract/Entity';
 import { Router, Request, Response, NextFunction } from 'express';
 import container from '@container';
 import { json } from 'body-parser';
+import { BigNumber as BN } from 'bignumber.js';
+import { historySyncTableName } from '@models/Interaction/Entity';
 
 const contractState = (
   data: any,
@@ -34,7 +36,7 @@ const contractState = (
     state.startHeight = Number(startHeight);
   }
   if (typeof abi === 'string') {
-    state.abi = abi !== '' ? JSON.parse(abi) : null;
+    state.abi = JSON.parse(abi);
   }
 
   return state;
@@ -195,12 +197,40 @@ export default Router()
         return res.json(await select.count().first());
       }
 
+      const provider = container.blockchain.byNetwork(req.params.contract.network).provider();
+      const currentBlock = await provider.getBlockNumber();
+
       const eventListenersList = await select
-        .orderBy('createdAt', 'asc')
+        .column(`${eventListenerTableName}.*`)
+        .column(`${historySyncTableName}.syncHeight`)
+        .leftJoin(
+          historySyncTableName,
+          `${eventListenerTableName}.id`,
+          `${historySyncTableName}.eventListener`,
+        )
+        .orderBy(`${eventListenerTableName}.createdAt`, 'asc')
         .limit(limit)
         .offset(offset);
 
-      return res.json(eventListenersList);
+      return res.json(
+        eventListenersList.map((eventListener) => {
+          const syncHeight = eventListener.syncHeight ?? 0;
+          return {
+            ...eventListener,
+            sync: {
+              currentBlock,
+              syncHeight,
+              progress: Number(
+                new BN(syncHeight)
+                  .minus(req.params.contract.startHeight)
+                  .div(new BN(currentBlock).minus(req.params.contract.startHeight))
+                  .multipliedBy(100)
+                  .toFixed(0),
+              ),
+            },
+          };
+        }),
+      );
     },
   )
   .post(

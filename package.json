@@ -14,6 +14,7 @@
     "queue:consume": "node ./server/dist/queueConsume.js",
     "queue:deferred": "node ./server/dist/queueDeferred.js",
     "queue:broker": "node ./server/dist/queueBroker.js",
+    "queue:schedule": "node ./server/dist/queueSchedule.js",
     "prepare": "husky install"
   },
   "lint-staged": {

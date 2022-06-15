@@ -6,7 +6,7 @@ export interface Contract {
   address: string;
   network: number;
   name: string;
-  abi: ethers.ContractInterface | null;
+  abi: ethers.ContractInterface;
   startHeight: number;
   updatedAt: Date;
   createdAt: Date;

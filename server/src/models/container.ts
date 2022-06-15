@@ -21,13 +21,9 @@ export class ModelContainer extends Container<typeof AppContainer> {
     () =>
       new Models.Queue.Service.QueueService(
         this.queueTable,
-        this.parent.rabbitmq,
-        this.parent.logger,
+        this.parent.rabbitmq(),
+        this.parent.logger(),
       ),
-  );
-
-  readonly walletInteractionTable = Models.WalletInteraction.Entity.walletInteractionTableFactory(
-    this.parent.database,
   );
 
   readonly contractTable = Models.Contract.Entity.contractTableFactory(this.parent.database);
@@ -41,6 +37,22 @@ export class ModelContainer extends Container<typeof AppContainer> {
       new Models.Contract.Service.ContractService(
         this.contractTable,
         this.contractEventListenerTable,
+      ),
+  );
+
+  readonly walletInteractionTable = Models.Interaction.Entity.walletInteractionTableFactory(
+    this.parent.database,
+  );
+
+  readonly historySyncTable = Models.Interaction.Entity.historySyncTableFactory(
+    this.parent.database,
+  );
+
+  readonly interactionService = singleton(
+    () =>
+      new Models.Interaction.Service.InteractionService(
+        this.walletInteractionTable,
+        this.historySyncTable,
       ),
   );
 }

@@ -1,5 +1,20 @@
 import { tableFactory as createTableFactory } from '@services/Database';
 
+export interface HistorySync {
+  id: string;
+  eventListener: string;
+  syncHeight: number;
+  task: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const historySyncTableName = 'history_sync';
+
+export const historySyncTableFactory = createTableFactory<HistorySync>(historySyncTableName);
+
+export type HistorySyncTable = ReturnType<ReturnType<typeof historySyncTableFactory>>;
+
 export interface WalletInteraction {
   id: string;
   wallet: string;

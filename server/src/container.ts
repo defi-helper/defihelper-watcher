@@ -1,6 +1,6 @@
 import { Container, singleton } from '@services/Container';
 import { pgConnectFactory } from '@services/Database';
-import { RabbitmqLogger } from '@services/Log';
+import { ConsoleLogger } from '@services/Log';
 import { BlockchainContainer } from '@services/Blockchain';
 import { ModelContainer } from '@models/container';
 import { rabbitmqFactory } from '@services/Rabbitmq';
@@ -16,7 +16,7 @@ class AppContainer extends Container<typeof config> {
 
   readonly blockchain = new BlockchainContainer(this.parent.blockchain);
 
-  readonly logger = singleton(RabbitmqLogger.factory(this.rabbitmq));
+  readonly logger = singleton(ConsoleLogger.factory());
 
   readonly model = new ModelContainer(this);
 }

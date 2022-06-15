@@ -1,9 +1,15 @@
+import container from '@container';
 import { Factory } from '@services/Container';
+import { Emitter } from '@services/Event';
 import { ethers } from 'ethers';
 import { v4 as uuid } from 'uuid';
 import { Contract, ContractTable, EventListener, EventListenerTable } from './Entity';
 
 export class ContractService {
+  public readonly onEventListenerCreated = new Emitter<EventListener>((eventListener) => {
+    container.model.queueService().push('eventsEventListenerCreated', { id: eventListener.id });
+  });
+
   constructor(
     readonly contractTable: Factory<ContractTable>,
     readonly listenerTable: Factory<EventListenerTable>,
@@ -13,7 +19,7 @@ export class ContractService {
     network: number,
     address: string,
     name: string,
-    abi: ethers.ContractInterface | null,
+    abi: ethers.ContractInterface,
     startHeight: number,
   ) {
     const created: Contract = {
@@ -21,7 +27,7 @@ export class ContractService {
       network,
       address: address.toLowerCase(),
       name,
-      abi: abi === null ? null : JSON.stringify(abi, null, 4),
+      abi: JSON.stringify(abi, null, 4),
       startHeight,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -35,7 +41,7 @@ export class ContractService {
     const updated = {
       ...contract,
       address: contract.address.toLowerCase(),
-      abi: contract.abi === null ? null : JSON.stringify(contract.abi, null, 4),
+      abi: JSON.stringify(contract.abi, null, 4),
       updatedAt: new Date(),
     };
     await this.contractTable().where({ id: contract.id }).update(updated);
@@ -64,6 +70,7 @@ export class ContractService {
       updatedAt: new Date(),
     };
     await this.listenerTable().insert(created);
+    this.onEventListenerCreated.emit(created);
 
     return created;
   }

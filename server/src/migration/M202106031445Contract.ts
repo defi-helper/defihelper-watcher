@@ -7,7 +7,7 @@ export default (schema: SchemaBuilder) => {
     table.string('address', 42).notNullable().index();
     table.integer('network').notNullable().index();
     table.string('name', 512).notNullable();
-    table.jsonb('abi').nullable();
+    table.jsonb('abi').notNullable();
     table.integer('startHeight').notNullable();
     table.dateTime('updatedAt').notNullable();
     table.dateTime('createdAt').notNullable();

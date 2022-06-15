@@ -13,7 +13,7 @@ container.model
 
     await rabbit.createQueue(
       'scanner_events_log',
-      { durable: false, exclusive: true },
+      { durable: false, autoDelete: true },
       (msg, ack) => {
         ack();
         const {

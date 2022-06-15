@@ -13,7 +13,7 @@ export enum TaskStatus {
 }
 
 export class Process {
-  constructor(readonly task: Task = task) {}
+  constructor(readonly task: Task = task, readonly addedInfo: string = '') {}
 
   param(params: Object) {
     return new Process({
@@ -23,10 +23,13 @@ export class Process {
   }
 
   info(msg: string) {
-    return new Process({
-      ...this.task,
-      info: `${msg}\n\n${this.task.info}`.substr(0, 5000),
-    });
+    return new Process(
+      {
+        ...this.task,
+        info: `${msg}\n\n${this.task.info}`.slice(0, 5000),
+      },
+      msg,
+    );
   }
 
   done() {
