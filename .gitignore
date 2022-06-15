@@ -1,0 +1,6 @@
+node_modules
+.env
+.idea
+.parcel-cache
+server/dist
+public/dist

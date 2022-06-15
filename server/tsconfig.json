@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "rootDir": "./src",
+    "paths": {
+      "@container": ["./container"],
+      "@api/*": ["./api/*"],
+      "@models/*": ["./models/*"],
+      "@services/*": ["./services/*"]
+    },
+    "target": "es5",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "inlineSourceMap": true,
+  }
+}
