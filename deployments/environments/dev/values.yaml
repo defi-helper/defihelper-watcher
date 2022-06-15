@@ -53,8 +53,8 @@ broker:
       environment: dev
       queue: process
     queues:
-      resolve_eth:
-        name: resolve_eth
+      ethresolve:
+        name: ethresolve
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1"'
         replicas: 1
         resources:
