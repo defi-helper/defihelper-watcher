@@ -21,9 +21,19 @@ export class ContractService {
     name: string,
     abi: ethers.ContractInterface,
     startHeight: number,
+    fid: string | null = null,
   ) {
+    const existing = await this.contractTable()
+      .where({
+        network,
+        address: address.toLowerCase(),
+      })
+      .first();
+    if (existing) return existing;
+
     const created: Contract = {
       id: uuid(),
+      fid,
       network,
       address: address.toLowerCase(),
       name,

@@ -13,6 +13,7 @@ const contractState = (
   address: string | Error;
   startHeight: number | Error;
   abi: any[] | Error;
+  fid: string | null | Error;
 } => {
   const state: ReturnType<typeof contractState> = {
     name: new Error('Invalid name'),
@@ -20,9 +21,10 @@ const contractState = (
     address: new Error('Invalid address'),
     startHeight: new Error('Invalid start height'),
     abi: new Error('Invalid ABI'),
+    fid: new Error('Invalid FID'),
   };
 
-  const { name, network, address, startHeight, abi } = data;
+  const { name, network, address, startHeight, abi, fid } = data;
   if (typeof name === 'string' && name !== '') {
     state.name = name;
   }
@@ -38,19 +40,24 @@ const contractState = (
   if (typeof abi === 'string') {
     state.abi = JSON.parse(abi);
   }
+  if (typeof fid === 'string') {
+    state.fid = fid !== '' ? fid : null;
+  }
 
   return state;
 };
 
-const eventListenerState = (data: any) => {
+const eventListenerState = (data: any): { name: string | Error } => {
+  const state: ReturnType<typeof eventListenerState> = {
+    name: new Error('Invalid name'),
+  };
+
   const { name } = data;
-  if (typeof name !== 'string' || name === '') {
-    return new Error('Invalid name');
+  if (typeof name === 'string' && name !== '') {
+    state.name = name;
   }
 
-  return {
-    name,
-  };
+  return state;
 };
 
 interface ContractReqParams {
@@ -124,7 +131,7 @@ export default Router()
     return res.json(await select.limit(limit).offset(offset));
   })
   .post('/', json(), async (req, res) => {
-    const { name, network, address, startHeight, abi } = contractState(req.body);
+    const { name, network, address, startHeight, abi, fid } = contractState(req.body);
     if (name instanceof Error) {
       return res.status(400).send(name.message);
     }
@@ -140,15 +147,44 @@ export default Router()
     if (abi instanceof Error) {
       return res.status(400).send(abi.message);
     }
+    if (fid instanceof Error) {
+      return res.status(400).send(fid.message);
+    }
 
     const contract = await container.model
       .contractService()
-      .createContract(network, address, name, abi, startHeight);
+      .createContract(network, address, name, abi, startHeight, fid);
 
     return res.json(contract);
   })
   .get('/:contractId', [contractMiddleware], (req: Request<ContractReqParams>, res: Response) =>
     res.json(req.params.contract),
+  )
+  .get('/fid/:contractFid', (req, res) =>
+    container.model
+      .contractTable()
+      .where('fid', req.params.contractFid)
+      .first()
+      .then((contract) =>
+        contract ? res.json(contract) : res.status(404).send('Contract not found'),
+      ),
+  )
+  .get(
+    '/:contractId/statistics',
+    [json(), contractMiddleware],
+    async (req: Request<ContractReqParams>, res: Response) => {
+      const uniqueWalletsCount = await container.model
+        .walletInteractionTable()
+        .countDistinct('wallet')
+        .where('network', req.params.contract.network)
+        .where('contract', req.params.contract.address.toLowerCase())
+        .first()
+        .then((row) => Number(row ? row.count : '0'));
+
+      return res.json({
+        uniqueWalletsCount,
+      });
+    },
   )
   .delete(
     '/:contractId',
@@ -164,7 +200,7 @@ export default Router()
     [json(), contractMiddleware],
     async (req: Request<ContractReqParams>, res: Response) => {
       const { contract } = req.params;
-      const { name, network, address, startHeight, abi } = contractState(req.body);
+      const { name, network, address, startHeight, abi, fid } = contractState(req.body);
 
       const updated = await container.model.contractService().updateContract({
         ...contract,
@@ -173,6 +209,7 @@ export default Router()
         address: address instanceof Error ? contract.address : address,
         startHeight: startHeight instanceof Error ? contract.startHeight : startHeight,
         abi: abi instanceof Error ? contract.abi : abi,
+        fid: fid instanceof Error ? contract.fid : fid,
       });
 
       return res.json(updated);
@@ -237,11 +274,10 @@ export default Router()
     '/:contractId/event-listener',
     [json(), contractMiddleware],
     async (req: Request<ContractReqParams>, res: Response) => {
-      const state = eventListenerState(req.body);
-      if (state instanceof Error) {
-        return res.status(400).send(state.message);
+      const { name } = eventListenerState(req.body);
+      if (name instanceof Error) {
+        return res.status(400).send(name.message);
       }
-      const { name } = state;
 
       const eventListener = await container.model
         .contractService()
@@ -263,11 +299,10 @@ export default Router()
     '/:contractId/event-listener/:listenerId',
     [json(), contractMiddleware, listenerMiddleware],
     async (req: Request<ContractReqParams & ListenerReqParams>, res: Response) => {
-      const state = eventListenerState(req.body);
-      if (state instanceof Error) {
-        return res.status(400).send(state.message);
+      const { name } = eventListenerState(req.body);
+      if (name instanceof Error) {
+        return res.status(400).send(name.message);
       }
-      const { name } = state;
 
       const updated = await container.model.contractService().updateListener({
         ...req.params.listener,
