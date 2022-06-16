@@ -109,22 +109,22 @@ broker:
             memory: 512Mi
             cpu: 500m
 
-#handlers:
-#  labels:
-#    app: watcher
-#    component: cronHandler
-#    environment: dev
-#  resources:
-#    requests:
-#      memory: 128Mi
-#      cpu: 200m
-#    limits:
-#      memory: 256Mi
-#      cpu: 300m
-#  schedules:
-#    queue-deferred:
-#      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-deferred"'
-#      schedule: "* * * * *"
+handlers:
+  labels:
+    app: watcher
+    component: cronHandler
+    environment: dev
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 200m
+    limits:
+      memory: 256Mi
+      cpu: 300m
+  schedules:
+    queue-deferred:
+      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute30"'
+      schedule: "*/30 * * * *"
 
 autoscaling:
   enabled: false
