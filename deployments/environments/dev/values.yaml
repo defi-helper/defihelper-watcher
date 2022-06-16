@@ -64,6 +64,50 @@ broker:
           limits:
             memory: 512Mi
             cpu: 500m
+      bscresolve:
+        name: bscresolve
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 56"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 200m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+      polygonresolve:
+        name: polygonresolve
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 137"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 200m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+      moonriverresolve:
+        name: moonriverresolve
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1285"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 200m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+      avaxresolve:
+        name: avaxresolve
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 43114"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 200m
+          limits:
+            memory: 512Mi
+            cpu: 500m
 
 #handlers:
 #  labels:
