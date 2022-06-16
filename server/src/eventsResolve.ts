@@ -9,6 +9,7 @@ const options = cli([
   { name: 'chunk', alias: 'c', type: Number, defaultValue: 100 },
   { name: 'interval', alias: 'i', type: Number, defaultValue: 2000 },
   { name: 'priority', alias: 'p', type: Number, defaultValue: 5 },
+  { name: 'expiration', alias: 'e', type: Number, defaultValue: 0 },
 ]);
 if (options.network <= 0) {
   throw new Error(`Invalid network: ${options.network}`);
@@ -21,6 +22,9 @@ if (options.interval <= 0) {
 }
 if (options.priority < 0 || options.priority > 255) {
   throw new Error(`Invalid priority: ${options.priority}`);
+}
+if (options.expiration >= 0) {
+  throw new Error(`Invalid expiration: ${options.expiration}`);
 }
 
 function normalizeEvent({
@@ -117,7 +121,6 @@ container.model
                   return rabbit.publishTopic(
                     `scanner.events.${options.network}`,
                     {
-                      network: options.network,
                       contract: {
                         id,
                         network,
@@ -131,7 +134,10 @@ container.model
                       to: currentBlock,
                       events: events.map(normalizeEvent),
                     },
-                    { priority: options.priority },
+                    {
+                      priority: options.priority,
+                      expiration: options.expiration > 0 ? options.expiration : undefined,
+                    },
                   );
                 }),
               );

@@ -44,7 +44,7 @@ export function route(express: Express) {
     });
 
     return res.json(
-      interactions.map(({ network, contract, eventName }) => ({ network, contract, eventName })),
+      interactions.map(({ network, contract, eventName: event }) => ({ network, contract, event })),
     );
   });
   express.use('/api/address', addressRouter);
