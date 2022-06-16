@@ -1,10 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  getContract,
-  EventListener,
-  getEventListener,
-  Contract,
-} from "../../api";
+import React, { useState, useEffect } from 'react';
+import { getContract, EventListener, getEventListener, Contract } from '../../api';
 
 interface Event {
   contract: { id: string; network: number; address: string };
@@ -21,12 +16,10 @@ export interface Props {
 
 export function EventListenerPage({ contractId, eventListenerId }: Props) {
   const [contract, setContract] = useState<Contract | Error | null>(null);
-  const [eventListener, setEventListener] = useState<
-    EventListener | Error | null
-  >(null);
+  const [eventListener, setEventListener] = useState<EventListener | Error | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
-  const ws = new WebSocket(`ws://${location.host}`);
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
 
   useEffect(() => {
     getContract(contractId)
@@ -36,9 +29,9 @@ export function EventListenerPage({ contractId, eventListenerId }: Props) {
           .then((eventListener) => {
             setEventListener(eventListener);
           })
-          .catch(() => setEventListener(new Error("Event listener not found")));
+          .catch(() => setEventListener(new Error('Event listener not found')));
       })
-      .catch(() => setContract(new Error("Contract not found")));
+      .catch(() => setContract(new Error('Contract not found')));
 
     ws.onopen = () => setSocketConnected(true);
     ws.onclose = () => setSocketConnected(false);
@@ -73,15 +66,15 @@ export function EventListenerPage({ contractId, eventListenerId }: Props) {
     <div className="container">
       <div>
         <a href={`/`}>Main</a>
-        {" > "}
+        {' > '}
         <a href={`/contract/${contractId}`}>{contract.name}</a>
       </div>
       <div>
-        Socket:{" "}
+        Socket:{' '}
         {socketConnected ? (
-          <span style={{ color: "green" }}>connected</span>
+          <span style={{ color: 'green' }}>connected</span>
         ) : (
-          <span style={{ color: "red" }}>disconnected</span>
+          <span style={{ color: 'red' }}>disconnected</span>
         )}
       </div>
       <div>
