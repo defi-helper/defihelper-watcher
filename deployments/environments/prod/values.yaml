@@ -55,7 +55,7 @@ broker:
     queues:
       queue:
         name: queue
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-consume -- -q scanner_tasks_default"'
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:consume -- -q scanner_tasks_default"'
         replicas: 1
         nodeSelector:
           group_name: "apps-jobs"
