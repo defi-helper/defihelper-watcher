@@ -44,8 +44,8 @@ ingress:
         - watcher.defihelper.io
 
 broker:
-  maxReplicas: 5
-  maxReadyMessagesForHpa: 500
+  maxReplicas: 10
+  maxReadyMessagesForHpa: 100
   process:
     labels:
       app: app
