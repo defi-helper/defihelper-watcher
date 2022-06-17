@@ -53,6 +53,17 @@ broker:
       environment: dev
       queue: process
     queues:
+      queue:
+        name: queue
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-consume -- -q scanner_tasks_default"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 2048Mi
+            cpu: 1
+          limits:
+            memory: 4096Mi
+            cpu: 2
       ethresolve:
         name: ethresolve
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1"'
@@ -109,22 +120,25 @@ broker:
             memory: 512Mi
             cpu: 500m
 
-#handlers:
-#  labels:
-#    app: watcher
-#    component: cronHandler
-#    environment: dev
-#  resources:
-#    requests:
-#      memory: 128Mi
-#      cpu: 200m
-#    limits:
-#      memory: 256Mi
-#      cpu: 300m
-#  schedules:
-#    queue-deferred:
-#      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-deferred"'
-#      schedule: "* * * * *"
+handlers:
+  labels:
+    app: watcher
+    component: cronHandler
+    environment: dev
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 200m
+    limits:
+      memory: 256Mi
+      cpu: 300m
+  schedules:
+    minute30:
+      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute30"'
+      schedule: "*/30 * * * *"
+    queue-deferred:
+      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-deferred"'
+      schedule: "* * * * *"
 
 autoscaling:
   enabled: false
