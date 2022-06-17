@@ -66,7 +66,7 @@ broker:
             cpu: 2
       ethresolve:
         name: ethresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1"'
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1 --expiration 300000"'
         replicas: 1
         resources:
           requests:
@@ -77,7 +77,7 @@ broker:
             cpu: 500m
       bscresolve:
         name: bscresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 56"'
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 56 --expiration 300000"'
         replicas: 1
         resources:
           requests:
@@ -88,7 +88,7 @@ broker:
             cpu: 500m
       polygonresolve:
         name: polygonresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 137"'
+        command: '"/bin/sh","-c","ln -s  ./configuration/.env ./.env && npm run events:resolve -- --network 137 --expiration 300000"'
         replicas: 1
         resources:
           requests:
@@ -99,7 +99,7 @@ broker:
             cpu: 500m
       moonriverresolve:
         name: moonriverresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1285"'
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1285 --expiration 300000"'
         replicas: 1
         resources:
           requests:
@@ -110,7 +110,7 @@ broker:
             cpu: 500m
       avaxresolve:
         name: avaxresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 43114"'
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 43114 --expiration 300000"'
         replicas: 1
         resources:
           requests:
@@ -136,8 +136,8 @@ handlers:
     minute30:
       command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute30"'
       schedule: "*/30 * * * *"
-    queue-deferred:
-      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue-deferred"'
+    queue:deferred:
+      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:deferred"'
       schedule: "* * * * *"
 
 autoscaling:
