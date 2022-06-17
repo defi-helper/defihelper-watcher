@@ -23,7 +23,7 @@ if (options.interval <= 0) {
 if (options.priority < 0 || options.priority > 255) {
   throw new Error(`Invalid priority: ${options.priority}`);
 }
-if (options.expiration >= 0) {
+if (options.expiration < 0) {
   throw new Error(`Invalid expiration: ${options.expiration}`);
 }
 
@@ -136,7 +136,7 @@ container.model
                     },
                     {
                       priority: options.priority,
-                      expiration: options.expiration > 0 ? options.expiration : undefined,
+                      expiration: options.expiration,
                     },
                   );
                 }),
