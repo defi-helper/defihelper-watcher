@@ -136,7 +136,7 @@ handlers:
     minute30:
       command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute30"'
       schedule: "*/30 * * * *"
-    queue:deferred:
+    queue-deferred:
       command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:deferred"'
       schedule: "* * * * *"
 
