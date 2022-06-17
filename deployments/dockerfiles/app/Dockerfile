@@ -6,6 +6,7 @@ ARG NODE_ENV
 ENV NODE_ENV ${NODE_ENV:-production}
 
 COPY package*.json ./
+RUN npm install -g husky cross-env
 RUN npm ci
 COPY . .
 RUN npm run server:build
