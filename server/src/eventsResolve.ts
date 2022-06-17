@@ -69,82 +69,86 @@ container.model
     const logger = container.logger();
 
     (async function resolve(start: number) {
-      const [currentBlock, chunksCount] = await Promise.all([
-        provider.getBlockNumber(),
-        container.model
-          .contractTable()
-          .count()
-          .where('network', options.network)
-          .whereNotNull('abi')
-          .first()
-          .then((v) => Math.ceil(Number((v ?? { count: '0' }).count) / options.chunk)),
-      ]);
-      if (chunksCount > 10) {
-        logger.warn(
-          `Too many chunks on events resolver. Chunks count: ${chunksCount} with chunk length: ${options.chunk}`,
-        );
-      }
-      await Promise.all(
-        Array.from(new Array(chunksCount).keys()).map(async (offset) => {
-          const contracts = await container.model
+      try {
+        const [currentBlock, chunksCount] = await Promise.all([
+          provider.getBlockNumber(),
+          container.model
             .contractTable()
+            .count()
             .where('network', options.network)
             .whereNotNull('abi')
-            .offset(offset)
-            .limit(options.chunk);
-
-          return Promise.all(
-            contracts.map(async ({ id, abi, network, address }) => {
-              const contract = container.blockchain.contract(address, abi, provider);
-              const listeners = await container.model
-                .contractEventListenerTable()
-                .where('contract', id);
-              return Promise.all(
-                listeners.map(async (listener) => {
-                  const cacheKey = `eventListener:${listener.id}:syncHeight`;
-                  const syncHeight = await cache.get(cacheKey).then((v) => Number(v ?? '0'));
-                  if (syncHeight === 0 || currentBlock - syncHeight > 5) {
-                    return cache.setex(cacheKey, 3600, currentBlock);
-                  }
-                  if (currentBlock <= syncHeight) {
-                    return null;
-                  }
-
-                  const events = await contract.queryFilter(
-                    contract.filters[listener.name](),
-                    syncHeight,
-                    currentBlock,
-                  );
-                  await cache.setex(cacheKey, 3600, currentBlock + 1);
-                  if (events.length === 0) return null;
-
-                  return rabbit.publishTopic(
-                    `scanner.events.${options.network}`,
-                    {
-                      contract: {
-                        id,
-                        network,
-                        address,
-                      },
-                      listener: {
-                        id: listener.id,
-                        name: listener.name,
-                      },
-                      from: syncHeight,
-                      to: currentBlock,
-                      events: events.map(normalizeEvent),
-                    },
-                    {
-                      priority: options.priority,
-                      expiration: options.expiration,
-                    },
-                  );
-                }),
-              );
-            }),
+            .first()
+            .then((v) => Math.ceil(Number((v ?? { count: '0' }).count) / options.chunk)),
+        ]);
+        if (chunksCount > 10) {
+          logger.warn(
+            `Too many chunks on events resolver. Chunks count: ${chunksCount} with chunk length: ${options.chunk}`,
           );
-        }),
-      );
+        }
+        await Promise.all(
+          Array.from(new Array(chunksCount).keys()).map(async (offset) => {
+            const contracts = await container.model
+              .contractTable()
+              .where('network', options.network)
+              .whereNotNull('abi')
+              .offset(offset)
+              .limit(options.chunk);
+
+            return Promise.all(
+              contracts.map(async ({ id, abi, network, address }) => {
+                const contract = container.blockchain.contract(address, abi, provider);
+                const listeners = await container.model
+                  .contractEventListenerTable()
+                  .where('contract', id);
+                return Promise.all(
+                  listeners.map(async (listener) => {
+                    const cacheKey = `eventListener:${listener.id}:syncHeight`;
+                    const syncHeight = await cache.get(cacheKey).then((v) => Number(v ?? '0'));
+                    if (syncHeight === 0 || currentBlock - syncHeight > 5) {
+                      return cache.setex(cacheKey, 3600, currentBlock);
+                    }
+                    if (currentBlock <= syncHeight) {
+                      return null;
+                    }
+
+                    const events = await contract.queryFilter(
+                      contract.filters[listener.name](),
+                      syncHeight,
+                      currentBlock,
+                    );
+                    await cache.setex(cacheKey, 3600, currentBlock + 1);
+                    if (events.length === 0) return null;
+
+                    return rabbit.publishTopic(
+                      `scanner.events.${options.network}`,
+                      {
+                        contract: {
+                          id,
+                          network,
+                          address,
+                        },
+                        listener: {
+                          id: listener.id,
+                          name: listener.name,
+                        },
+                        from: syncHeight,
+                        to: currentBlock,
+                        events: events.map(normalizeEvent),
+                      },
+                      {
+                        priority: options.priority,
+                        expiration: options.expiration,
+                      },
+                    );
+                  }),
+                );
+              }),
+            );
+          }),
+        );
+      } catch (e) {
+        logger.error(`${e}`);
+      }
 
       const end = Date.now();
       const duration = end - start;
