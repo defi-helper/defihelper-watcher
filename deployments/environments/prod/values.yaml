@@ -66,11 +66,11 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 2048Mi
-            cpu: 1
+            memory: 1024Mi
+            cpu: 200m
           limits:
-            memory: 4096Mi
-            cpu: 2
+            memory: 2048Mi
+            cpu: 500m
       ethresolve:
         name: ethresolve
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1 --expiration 300000"'
