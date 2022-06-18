@@ -163,13 +163,6 @@ broker:
             cpu: 500m
 
 handlers:
-  nodeSelector:
-    group_name: "apps-jobs"
-  tolerations:
-    - key: node-role.kubernetes.io/apps-jobs
-      operator: "Equal"
-      value: "true"
-      effect: NoSchedule
   labels:
     app: watcher
     component: cronHandler
@@ -177,10 +170,10 @@ handlers:
   resources:
     requests:
       memory: 128Mi
-      cpu: 200m
+      cpu: 100m
     limits:
-      memory: 256Mi
-      cpu: 300m
+      memory: 128Mi
+      cpu: 100m
   schedules:
     minute30:
       command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute30"'
