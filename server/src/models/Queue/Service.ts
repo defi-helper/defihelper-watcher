@@ -142,18 +142,25 @@ export class QueueService {
     );
   }
 
-  async consumer(msg: any, ack: (error?: any, reply?: any) => any) {
-    const task: Task = JSON.parse(msg.content.toString());
-    console.info(`Handle task: ${task.id}`);
-    await this.handle(task);
-    ack();
-  }
-
   consume({ queue }: ConsumerOptions) {
-    this.rabbitmq.createQueue(
-      queue ?? 'scanner_tasks_default',
-      { durable: false },
-      this.consumer.bind(this),
-    );
+    let isConsume = false;
+    let isStoped = false;
+    this.rabbitmq.createQueue(queue ?? 'tasks_default', { durable: false }, async (msg, ack) => {
+      if (isStoped) return;
+      isConsume = true;
+      const task: Task = JSON.parse(msg.content.toString());
+      console.info(`Handle task: ${task.id}`);
+      await this.handle(task);
+      ack();
+      if (isStoped) setTimeout(() => this.rabbitmq.close(), 500); // for ack work
+      isConsume = false;
+    });
+
+    return {
+      stop: () => {
+        isStoped = true;
+        if (!isConsume) this.rabbitmq.close();
+      },
+    };
   }
 }

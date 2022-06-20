@@ -2,6 +2,7 @@ import 'source-map-support/register';
 import 'module-alias/register';
 import cli from 'command-line-args';
 import { ethers } from 'ethers';
+import process from 'process';
 import container from '@container';
 
 const options = cli([
@@ -68,7 +69,11 @@ container.model
     const cache = container.cache();
     const logger = container.logger();
 
+    let isConsume = false;
+    let isStoped = false;
     (async function resolve(start: number) {
+      if (isStoped) return;
+      isConsume = true;
       try {
         const [currentBlock, chunksCount] = await Promise.all([
           provider.getBlockNumber(),
@@ -149,7 +154,9 @@ container.model
       } catch (e) {
         logger.error(`${e}`);
       }
+      if (isStoped) rabbit.close();
 
+      isConsume = false;
       const end = Date.now();
       const duration = end - start;
       if (options.interval > duration) {
@@ -161,6 +168,11 @@ container.model
         resolve(end);
       }
     })(Date.now());
+
+    process.on('SIGTERM', () => {
+      isStoped = true;
+      if (!isConsume) rabbit.close();
+    });
   })
   .catch((e) => {
     console.error(e);
