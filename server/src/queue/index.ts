@@ -1,5 +1,5 @@
 // schedule
-export * as scheduleMinute30 from './schedule/minute30';
+export * as scheduleMinute10 from './schedule/minute10';
 
 // events
 export * as eventsEventListenerCreated from './contract/events/eventListenerCreated';

@@ -175,9 +175,9 @@ handlers:
       memory: 128Mi
       cpu: 100m
   schedules:
-    minute30:
-      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute30"'
-      schedule: "*/30 * * * *"
+    minute10:
+      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute10"'
+      schedule: "*/10 * * * *"
     queue-deferred:
       command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:deferred"'
       schedule: "* * * * *"

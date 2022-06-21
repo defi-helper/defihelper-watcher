@@ -11,9 +11,9 @@ container.model
 
     const queue = container.model.queueService();
     switch (options.period) {
-      case 'minute30':
+      case 'minute10':
         console.log('add task');
-        await queue.push('scheduleMinute30', {});
+        await queue.push('scheduleMinute10', {});
         break;
       default:
         throw new Error('Invalid period');
