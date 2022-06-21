@@ -52,6 +52,15 @@
   );
 }
 
+.progress > span.blue {
+  background-color: rgb(43, 134, 194);
+  background-image: linear-gradient(
+    center bottom,
+    rgb(43, 114, 194) 37%,
+    rgb(84, 157, 240) 69%
+  );
+}
+
 table tbody .hover:hover {
   background-color: #f5f5f5;
 }

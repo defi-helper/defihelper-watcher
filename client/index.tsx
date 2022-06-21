@@ -1,9 +1,9 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import { ContractListPage, ContractPage, EventListenerPage } from "./pages";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { ContractListPage, ContractPage, EventListenerPage, Report } from './pages';
 
-function App() {
-  if (location.pathname === "/") {
+function Router() {
+  if (location.pathname === '/') {
     return <ContractListPage />;
   }
 
@@ -13,7 +13,7 @@ function App() {
   }
 
   const eventListenerRoute = location.pathname.match(
-    /^\/contract\/([0-9a-z\-]+)\/event-listener\/([0-9a-z\-]+)$/i
+    /^\/contract\/([0-9a-z\-]+)\/event-listener\/([0-9a-z\-]+)$/i,
   );
   if (eventListenerRoute !== null) {
     return (
@@ -24,12 +24,23 @@ function App() {
     );
   }
 
+  const syncProgressNetworkRoute = location.pathname.match(
+    /^\/report\/sync-progress\/([0-9a-z\-]+)$/i,
+  );
+  if (syncProgressNetworkRoute !== null) {
+    return <Report.SyncProgressNetwork network={syncProgressNetworkRoute[1]} />;
+  }
+
+  if (/^\/report\/sync-progress$/i.test(location.pathname)) {
+    return <Report.SyncProgress />;
+  }
+
   return <div>Page not found</div>;
 }
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <Router />
   </React.StrictMode>,
-  document.querySelector("#page")
+  document.querySelector('#page'),
 );

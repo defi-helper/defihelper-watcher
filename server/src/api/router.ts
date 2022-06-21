@@ -2,8 +2,10 @@ import container from '@container';
 import { Express, Router } from 'express';
 import bodyParser from 'body-parser';
 import contractRouter from './contractRouter';
+import reportRouter from './reportRouter';
 
 export function route(express: Express) {
+  express.use('/api/report', reportRouter);
   express.use('/api/contract', contractRouter);
 
   const addressRouter = Router();

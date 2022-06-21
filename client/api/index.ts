@@ -1,5 +1,27 @@
 import axios from 'axios';
 
+export interface SyncProgressNetwork {
+  network: number;
+  blockNumber: number;
+  contractsCount: number;
+  listenersCount: number;
+  progress: { max: number; min: number };
+}
+
+export type SyncProgressReport = SyncProgressNetwork[];
+
+export function syncProgressReport() {
+  return axios.get<SyncProgressReport>(`/api/report/sync-progress`).then(({ data }) => data);
+}
+
+export function syncProgressNetworkReport(network: string | number, limit = 10, offset = 0) {
+  return axios
+    .get<{ list: EventListener[]; count: number }>(
+      `/api/report/sync-progress/${network}?limit=${limit}&offset=${offset}`,
+    )
+    .then(({ data }) => data);
+}
+
 export interface CountResponse {
   count: number;
 }
@@ -101,6 +123,7 @@ export async function updateContract(
 export interface EventListener {
   id: string;
   contract: string;
+  contractName: string;
   name: string;
   sync: {
     currentBlock: number;
@@ -110,6 +133,7 @@ export interface EventListener {
   syncHeight: number | null;
   updatedAt: string;
   createdAt: string;
+  syncAt: string | null;
 }
 
 export interface EventListenerListFilter {

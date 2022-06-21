@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useState, useEffect, useReducer } from 'react';
 import {
   Contract,
   createContract,
@@ -6,18 +6,18 @@ import {
   getContractList,
   getCountractCount,
   updateContract,
-} from "../../api";
-import { useDebounce } from "use-debounce";
-import { Modal } from "../../components/modal";
-import { NetworkSelector } from "../../components/network-selector";
-import { Pagination } from "../../components/pagination";
+} from '../../api';
+import { useDebounce } from 'use-debounce';
+import { Modal } from '../../components/modal';
+import { NetworkSelector } from '../../components/network-selector';
+import { Pagination } from '../../components/pagination';
 
 const networks = {
-  1: "Ethereum",
-  56: "Binance Smart Chain",
-  137: "Polygon",
-  1285: "Moonriver",
-  43114: "Avalanche",
+  1: 'Ethereum',
+  56: 'Binance Smart Chain',
+  137: 'Polygon',
+  1285: 'Moonriver',
+  43114: 'Avalanche',
 };
 
 interface ContractState {
@@ -30,11 +30,11 @@ interface ContractState {
 }
 
 type ContractAction =
-  | { type: "setName"; value: string }
-  | { type: "setNetwork"; value: number }
-  | { type: "setAddress"; value: string }
-  | { type: "setStartHeight"; value: number }
-  | { type: "setAbi"; value: string };
+  | { type: 'setName'; value: string }
+  | { type: 'setNetwork'; value: number }
+  | { type: 'setAddress'; value: string }
+  | { type: 'setStartHeight'; value: number }
+  | { type: 'setAbi'; value: string };
 
 function ContractForm(props: {
   state: ContractState;
@@ -44,21 +44,21 @@ function ContractForm(props: {
   const [contractState, contractDispatcher] = useReducer(
     (state: ContractState, action: ContractAction) => {
       switch (action.type) {
-        case "setName":
+        case 'setName':
           return { ...state, name: action.value };
-        case "setNetwork":
+        case 'setNetwork':
           return { ...state, network: action.value };
-        case "setAddress":
+        case 'setAddress':
           return { ...state, address: action.value };
-        case "setStartHeight":
+        case 'setStartHeight':
           return { ...state, startHeight: action.value };
-        case "setAbi":
+        case 'setAbi':
           return { ...state, abi: action.value };
         default:
           return state;
       }
     },
-    props.state
+    props.state,
   );
 
   return (
@@ -72,7 +72,7 @@ function ContractForm(props: {
           value={contractState.name}
           onChange={(e) =>
             contractDispatcher({
-              type: "setName",
+              type: 'setName',
               value: e.target.value,
             })
           }
@@ -81,9 +81,7 @@ function ContractForm(props: {
         <NetworkSelector
           id="contract-network"
           value={contractState.network}
-          onChange={(network) =>
-            contractDispatcher({ type: "setNetwork", value: network })
-          }
+          onChange={(network) => contractDispatcher({ type: 'setNetwork', value: network })}
           options={networks}
         />
         <label htmlFor="contract-address">Address</label>
@@ -94,7 +92,7 @@ function ContractForm(props: {
           value={contractState.address}
           onChange={(e) =>
             contractDispatcher({
-              type: "setAddress",
+              type: 'setAddress',
               value: e.target.value,
             })
           }
@@ -107,7 +105,7 @@ function ContractForm(props: {
           value={contractState.startHeight}
           onChange={(e) =>
             contractDispatcher({
-              type: "setStartHeight",
+              type: 'setStartHeight',
               value: parseInt(e.target.value, 10),
             })
           }
@@ -117,11 +115,9 @@ function ContractForm(props: {
           id="contract-abi"
           placeholder="Contract ABI..."
           value={contractState.abi}
-          onChange={(e) =>
-            contractDispatcher({ type: "setAbi", value: e.target.value })
-          }
+          onChange={(e) => contractDispatcher({ type: 'setAbi', value: e.target.value })}
         ></textarea>
-        <div style={{ color: "red" }}>{props.error}</div>
+        <div style={{ color: 'red' }}>{props.error}</div>
         <button onClick={() => props.onSave(contractState)}>Save</button>
       </fieldset>
     </form>
@@ -130,8 +126,8 @@ function ContractForm(props: {
 
 export function ContractListPage() {
   const [network, setNetwork] = useState<number>(0);
-  const [address, setAddress] = useState<string>("");
-  const [name, setName] = useState<string>("");
+  const [address, setAddress] = useState<string>('');
+  const [name, setName] = useState<string>('');
   const [addressDebounce] = useDebounce(address, 500);
   const [nameDebounce] = useDebounce(name, 500);
   const contractsLimit = 10;
@@ -139,31 +135,29 @@ export function ContractListPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [contractsCount, setContractsCount] = useState<number>(0);
   const [contractForm, setContractForm] = useState<ContractState | null>(null);
-  const [addModalError, setAddModalError] = useState<string>("");
+  const [addModalError, setAddModalError] = useState<string>('');
 
   const onReloadContractList = () => {
     const filter = {
       network: network !== 0 ? network : undefined,
-      address: address !== "" ? address : undefined,
-      name: name !== "" ? name : undefined,
+      address: address !== '' ? address : undefined,
+      name: name !== '' ? name : undefined,
     };
-    getContractList(
-      filter,
-      contractsLimit,
-      (contractsPage - 1) * contractsLimit
-    ).then(setContracts);
+    getContractList(filter, contractsLimit, (contractsPage - 1) * contractsLimit).then(
+      setContracts,
+    );
     getCountractCount(filter).then(setContractsCount);
   };
 
   const onDelete = async (contract: Contract) => {
-    if (!confirm("Are you sure?")) return;
+    if (!confirm('Are you sure?')) return;
 
     await deleteContract(contract.id);
     onReloadContractList();
   };
 
   const onSave = async (state: ContractState) => {
-    setAddModalError("");
+    setAddModalError('');
     try {
       if (state.id !== undefined) {
         await updateContract(
@@ -172,7 +166,7 @@ export function ContractListPage() {
           state.network,
           state.address,
           state.startHeight,
-          state.abi
+          state.abi,
         );
       } else {
         await createContract(
@@ -180,7 +174,7 @@ export function ContractListPage() {
           state.network,
           state.address,
           state.startHeight,
-          state.abi
+          state.abi,
         );
       }
       setContractForm(null);
@@ -208,7 +202,7 @@ export function ContractListPage() {
               value={network}
               onChange={setNetwork}
               options={{
-                0: "All",
+                0: 'All',
                 ...networks,
               }}
             />
@@ -221,11 +215,7 @@ export function ContractListPage() {
             />
           </div>
           <div className="column">
-            <input
-              placeholder="search"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <input placeholder="search" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
         </div>
         <table>
@@ -262,10 +252,7 @@ export function ContractListPage() {
                     >
                       Update
                     </button>
-                    <button
-                      className="button button-outline"
-                      onClick={() => onDelete(contract)}
-                    >
+                    <button className="button button-outline" onClick={() => onDelete(contract)}>
                       Delete
                     </button>
                   </div>
@@ -281,20 +268,25 @@ export function ContractListPage() {
           onPrev={setContractsPage}
           onNext={setContractsPage}
         />
-        <div>
-          <button
-            onClick={() =>
-              setContractForm({
-                name: "",
-                network: 1,
-                address: "",
-                startHeight: 0,
-                abi: "",
-              })
-            }
-          >
-            Add
-          </button>
+        <div className="row">
+          <div className="column">
+            <button
+              onClick={() =>
+                setContractForm({
+                  name: '',
+                  network: 1,
+                  address: '',
+                  startHeight: 0,
+                  abi: '',
+                })
+              }
+            >
+              Add
+            </button>
+          </div>
+          <div className="column" style={{ textAlign: 'right' }}>
+            <a href="report/sync-progress">Progress</a>
+          </div>
         </div>
       </div>
       <Modal
@@ -303,11 +295,7 @@ export function ContractListPage() {
         onClose={() => setContractForm(null)}
       >
         {contractForm === null || (
-          <ContractForm
-            state={contractForm}
-            onSave={onSave}
-            error={addModalError}
-          />
+          <ContractForm state={contractForm} onSave={onSave} error={addModalError} />
         )}
       </Modal>
     </div>

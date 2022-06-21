@@ -1,6 +1,5 @@
 import { Pagination } from '../../components/pagination';
 import React, { useState, useEffect, useReducer } from 'react';
-import { BigNumber as BN } from 'bignumber.js';
 import {
   Contract,
   getContract,
@@ -92,7 +91,7 @@ function EventListenerComponent({
       <td>
         <div className="progress">
           <span
-            className={sync.progress < 100 ? 'green' : 'red'}
+            className={sync.progress >= 90 ? 'green' : 'red'}
             style={{
               width: `${sync.progress}%`,
             }}

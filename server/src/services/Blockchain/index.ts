@@ -52,11 +52,12 @@ export class BlockchainContainer extends Container<Config> {
     return Object.prototype.hasOwnProperty.call(this.networks, network);
   };
 
-  readonly byNetwork = (network: number) => {
-    if (!this.hasNetwork(network)) {
+  readonly byNetwork = (network: number | string) => {
+    const chainId = Number(network);
+    if (!this.hasNetwork(chainId)) {
       throw new Error(`Undefined network ${network}`);
     }
-    return this.networks[network];
+    return this.networks[chainId];
   };
 
   readonly contract = (

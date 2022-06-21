@@ -1,4 +1,9 @@
-import { Contract, EventListener, eventListenerTableName } from '@models/Contract/Entity';
+import {
+  Contract,
+  contractTableName,
+  EventListener,
+  eventListenerTableName,
+} from '@models/Contract/Entity';
 import { Router, Request, Response, NextFunction } from 'express';
 import container from '@container';
 import { json } from 'body-parser';
@@ -239,7 +244,14 @@ export default Router()
 
       const eventListenersList = await select
         .column(`${eventListenerTableName}.*`)
+        .column(`${contractTableName}.name as contractName`)
         .column(`${historySyncTableName}.syncHeight`)
+        .column(`${historySyncTableName}.updatedAt as syncAt`)
+        .innerJoin(
+          contractTableName,
+          `${eventListenerTableName}.contract`,
+          `${contractTableName}.id`,
+        )
         .leftJoin(
           historySyncTableName,
           `${eventListenerTableName}.id`,
