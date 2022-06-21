@@ -24,27 +24,27 @@ export class BlockchainContainer extends Container<Config> {
     1: {
       id: 1,
       provider: singleton(providerFactory(this.parent.ethMainNode[0])),
-      historySyncStep: 500,
+      historySyncStep: 1000,
     },
     56: {
       id: 56,
       provider: singleton(providerFactory(this.parent.bscMainNode[0])),
-      historySyncStep: 500,
+      historySyncStep: 1000,
     },
     137: {
       id: 137,
       provider: singleton(providerFactory(this.parent.polygonMainNode[0])),
-      historySyncStep: 500,
+      historySyncStep: 1000,
     },
     1285: {
       id: 1285,
       provider: singleton(providerFactory(this.parent.moonriverMainNode[0])),
-      historySyncStep: 500,
+      historySyncStep: 1000,
     },
     43114: {
       id: 43114,
       provider: singleton(providerFactory(this.parent.avalancheMainNode[0])),
-      historySyncStep: 500,
+      historySyncStep: 1000,
     },
   };
 
