@@ -3,7 +3,6 @@ import { ethers } from 'ethers';
 
 export interface Contract {
   id: string;
-  fid: string | null;
   address: string;
   network: number;
   name: string;

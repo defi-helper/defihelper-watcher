@@ -21,7 +21,6 @@ export class ContractService {
     name: string,
     abi: ethers.ContractInterface,
     startHeight: number,
-    fid: string | null = null,
   ) {
     const existing = await this.contractTable()
       .where({
@@ -33,7 +32,6 @@ export class ContractService {
 
     const created: Contract = {
       id: uuid(),
-      fid,
       network,
       address: address.toLowerCase(),
       name,
