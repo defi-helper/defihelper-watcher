@@ -26,6 +26,9 @@ export default async function (process: Process) {
   if (!contract) {
     throw new Error(`Contract "${listener.contract}" not found`);
   }
+  if (!contract.enabled) {
+    throw new Error(`Contract "${contract.id}" disabled`);
+  }
 
   const network = container.blockchain.byNetwork(contract.network);
   const step = network.historySyncStep;

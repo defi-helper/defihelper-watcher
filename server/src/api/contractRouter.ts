@@ -18,6 +18,7 @@ const contractState = (
   address: string | Error;
   startHeight: number | Error;
   abi: any[] | Error;
+  enabled?: boolean | Error;
 } => {
   const state: ReturnType<typeof contractState> = {
     name: new Error('Invalid name'),
@@ -25,9 +26,10 @@ const contractState = (
     address: new Error('Invalid address'),
     startHeight: new Error('Invalid start height'),
     abi: new Error('Invalid ABI'),
+    enabled: new Error('Invalid enabled flag'),
   };
 
-  const { name, network, address, startHeight, abi } = data;
+  const { name, network, address, startHeight, abi, enabled } = data;
   if (typeof name === 'string' && name !== '') {
     state.name = name;
   }
@@ -42,6 +44,9 @@ const contractState = (
   }
   if (typeof abi === 'string') {
     state.abi = JSON.parse(abi);
+  }
+  if (typeof enabled === 'boolean' || enabled === undefined) {
+    state.enabled = enabled;
   }
 
   return state;
@@ -188,7 +193,7 @@ export default Router()
     [json(), contractMiddleware],
     async (req: Request<ContractReqParams>, res: Response) => {
       const { contract } = req.params;
-      const { name, network, address, startHeight, abi } = contractState(req.body);
+      const { name, network, address, startHeight, abi, enabled } = contractState(req.body);
 
       const updated = await container.model.contractService().updateContract({
         ...contract,
@@ -197,6 +202,7 @@ export default Router()
         address: address instanceof Error ? contract.address : address,
         startHeight: startHeight instanceof Error ? contract.startHeight : startHeight,
         abi: abi instanceof Error ? contract.abi : abi,
+        enabled: enabled instanceof Error || enabled === undefined ? contract.enabled : enabled,
       });
 
       return res.json(updated);

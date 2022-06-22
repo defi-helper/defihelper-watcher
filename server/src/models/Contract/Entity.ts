@@ -8,6 +8,7 @@ export interface Contract {
   name: string;
   abi: ethers.ContractInterface;
   startHeight: number;
+  enabled: boolean;
   updatedAt: Date;
   createdAt: Date;
 }

@@ -1,8 +1,20 @@
 import container from '@container';
+import { contractTableName, eventListenerTableName } from '@models/Contract/Entity';
+import { historySyncTableName } from '@models/Interaction/Entity';
 import { Process, TaskStatus } from '@models/Queue/Entity';
 
 export default async function (process: Process) {
-  const syncHistories = await container.model.historySyncTable();
+  const syncHistories = await container.model
+    .historySyncTable()
+    .column(`${historySyncTableName}.*`)
+    .innerJoin(
+      eventListenerTableName,
+      `${eventListenerTableName}.id`,
+      `${historySyncTableName}.eventListener`,
+    )
+    .innerJoin(contractTableName, `${contractTableName}.id`, `${eventListenerTableName}.contract`)
+    .whereNotNull('abi')
+    .where('enabled', true);
 
   const queue = container.model.queueService();
   const interaction = container.model.interactionService();

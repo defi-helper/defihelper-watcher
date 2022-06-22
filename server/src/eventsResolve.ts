@@ -69,6 +69,11 @@ container.model
     const cache = container.cache();
     const logger = container.logger();
 
+    const select = container.model
+      .contractTable()
+      .where('network', options.network)
+      .whereNotNull('abi')
+      .where('enabled', true);
     let isConsume = false;
     let isStoped = false;
     (async function resolve(start: number) {
@@ -77,11 +82,9 @@ container.model
       try {
         const [currentBlock, chunksCount] = await Promise.all([
           provider.getBlockNumber(),
-          container.model
-            .contractTable()
+          select
+            .clone()
             .count()
-            .where('network', options.network)
-            .whereNotNull('abi')
             .first()
             .then((v) => Math.ceil(Number((v ?? { count: '0' }).count) / options.chunk)),
         ]);
@@ -92,12 +95,7 @@ container.model
         }
         await Promise.all(
           Array.from(new Array(chunksCount).keys()).map(async (offset) => {
-            const contracts = await container.model
-              .contractTable()
-              .where('network', options.network)
-              .whereNotNull('abi')
-              .offset(offset)
-              .limit(options.chunk);
+            const contracts = await select.clone().offset(offset).limit(options.chunk);
 
             return Promise.all(
               contracts.map(async ({ id, abi, network, address }) => {

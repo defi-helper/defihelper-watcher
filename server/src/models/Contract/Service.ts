@@ -37,6 +37,7 @@ export class ContractService {
       name,
       abi: JSON.stringify(abi, null, 4),
       startHeight,
+      enabled: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

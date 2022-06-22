@@ -17,7 +17,7 @@ container.model
     route(express);
     express.get(/\/.+/, (_, res) => res.sendFile(resolve(__dirname, '../../public/index.html')));
     const ws = new WebSocketServer({ server });
-    server.listen(8080, () => console.log(`Listen 8080`));
+    server.listen(9002, () => console.log(`Listen 8080`));
 
     const rabbit = container.rabbitmq();
     rabbit.on('connected', async () => {
