@@ -4,6 +4,8 @@ import cli from 'command-line-args';
 import { ethers } from 'ethers';
 import process from 'process';
 import container from '@container';
+import { contractTableName, eventListenerTableName } from '@models/Contract/Entity';
+import { promptlySyncTableName } from '@models/Interaction/Entity';
 
 const options = cli([
   { name: 'network', alias: 'n', type: Number },
@@ -71,9 +73,18 @@ container.model
 
     const select = container.model
       .contractTable()
+      .innerJoin(
+        eventListenerTableName,
+        `${contractTableName}.id`,
+        `${eventListenerTableName}.contract`,
+      )
+      .innerJoin(
+        promptlySyncTableName,
+        `${eventListenerTableName}.id`,
+        `${promptlySyncTableName}.eventListener`,
+      )
       .where('network', options.network)
-      .whereNotNull('abi')
-      .where('enabled', true);
+      .whereNotNull('abi');
     let isConsume = false;
     let isStoped = false;
     (async function resolve(start: number) {
@@ -84,7 +95,7 @@ container.model
           provider.getBlockNumber(),
           select
             .clone()
-            .count()
+            .countDistinct(`${contractTableName}.id`)
             .first()
             .then((v) => Math.ceil(Number((v ?? { count: '0' }).count) / options.chunk)),
         ]);
@@ -95,13 +106,28 @@ container.model
         }
         await Promise.all(
           Array.from(new Array(chunksCount).keys()).map(async (offset) => {
-            const contracts = await select.clone().offset(offset).limit(options.chunk);
+            const contracts = await select
+              .clone()
+              .distinctOn([`${contractTableName}.id`])
+              .columns([
+                `${contractTableName}.id`,
+                `${contractTableName}.abi`,
+                `${contractTableName}.network`,
+                `${contractTableName}.address`,
+              ])
+              .offset(offset)
+              .limit(options.chunk);
 
             return Promise.all(
               contracts.map(async ({ id, abi, network, address }) => {
                 const contract = container.blockchain.contract(address, abi, provider);
                 const listeners = await container.model
                   .contractEventListenerTable()
+                  .innerJoin(
+                    promptlySyncTableName,
+                    `${eventListenerTableName}.id`,
+                    `${promptlySyncTableName}.eventListener`,
+                  )
                   .where('contract', id);
                 return Promise.all(
                   listeners.map(async (listener) => {
@@ -111,6 +137,9 @@ container.model
                       return cache.setex(cacheKey, 3600, currentBlock);
                     }
                     if (currentBlock <= syncHeight) {
+                      return null;
+                    }
+                    if (typeof contract.filters[listener.name] !== 'function') {
                       return null;
                     }
 

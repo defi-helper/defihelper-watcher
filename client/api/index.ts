@@ -125,6 +125,8 @@ export interface EventListener {
   contract: string;
   contractName: string;
   name: string;
+  historicalId: string | null;
+  promptlyId: string | null;
   sync: {
     currentBlock: number;
     syncHeight: number;
@@ -181,10 +183,12 @@ export function createEventListener(contractId: string, name: string) {
     .then(({ data }) => data);
 }
 
-export function updateEventListener(contractId: string, id: string, name: string) {
+export function updateEventListener(
+  contractId: string,
+  id: string,
+  config: { promptly: {} | null; historical: { syncHeight: number } | null },
+) {
   return axios
-    .put<EventListener>(`/api/contract/${contractId}/event-listener/${id}`, {
-      name,
-    })
+    .put<EventListener>(`/api/contract/${contractId}/event-listener/${id}`, config)
     .then(({ data }) => data);
 }

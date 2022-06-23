@@ -1,5 +1,18 @@
 import { tableFactory as createTableFactory } from '@services/Database';
 
+export interface PromptlySync {
+  id: string;
+  eventListener: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const promptlySyncTableName = 'promptly_sync';
+
+export const promptlySyncTableFactory = createTableFactory<PromptlySync>(promptlySyncTableName);
+
+export type PromptlySyncTable = ReturnType<ReturnType<typeof promptlySyncTableFactory>>;
+
 export interface HistorySync {
   id: string;
   eventListener: string;

@@ -1,11 +1,14 @@
 import 'module-alias/register';
 import 'source-map-support/register';
+import cla from 'command-line-args';
 import http from 'http';
 import Express from 'express';
 import WebSocket, { WebSocketServer } from 'ws';
 import { resolve } from 'path';
 import container from '@container';
 import { route } from '@api/router';
+
+const args = cla([{ name: 'port', alias: 'p', type: Number, defaultValue: 8080 }]);
 
 container.model
   .migrationService()
@@ -17,7 +20,7 @@ container.model
     route(express);
     express.get(/\/.+/, (_, res) => res.sendFile(resolve(__dirname, '../../public/index.html')));
     const ws = new WebSocketServer({ server });
-    server.listen(8080, () => console.log(`Listen 8080`));
+    server.listen(args.port, () => console.log(`Listen ${args.port}`));
 
     const rabbit = container.rabbitmq();
     rabbit.on('connected', async () => {
