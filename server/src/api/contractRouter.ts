@@ -8,7 +8,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import container from '@container';
 import { json } from 'body-parser';
 import { BigNumber as BN } from 'bignumber.js';
-import { historySyncTableName } from '@models/Interaction/Entity';
+import { historySyncTableName, promptlySyncTableName } from '@models/Interaction/Entity';
 
 const contractState = (
   data: any,
@@ -231,10 +231,14 @@ export default Router()
       const currentBlock = await provider.getBlockNumber();
 
       const eventListenersList = await select
-        .column(`${eventListenerTableName}.*`)
-        .column(`${contractTableName}.name as contractName`)
-        .column(`${historySyncTableName}.syncHeight`)
-        .column(`${historySyncTableName}.updatedAt as syncAt`)
+        .columns([
+          `${eventListenerTableName}.*`,
+          `${contractTableName}.name as contractName`,
+          `${promptlySyncTableName}.id as promptlyId`,
+          `${historySyncTableName}.id as historicalId`,
+          `${historySyncTableName}.syncHeight`,
+          `${historySyncTableName}.updatedAt as syncAt`,
+        ])
         .innerJoin(
           contractTableName,
           `${eventListenerTableName}.contract`,
@@ -244,6 +248,11 @@ export default Router()
           historySyncTableName,
           `${eventListenerTableName}.id`,
           `${historySyncTableName}.eventListener`,
+        )
+        .leftJoin(
+          promptlySyncTableName,
+          `${eventListenerTableName}.id`,
+          `${promptlySyncTableName}.eventListener`,
         )
         .orderBy(`${eventListenerTableName}.createdAt`, 'asc')
         .limit(limit)
@@ -299,17 +308,28 @@ export default Router()
     '/:contractId/event-listener/:listenerId',
     [json(), contractMiddleware, listenerMiddleware],
     async (req: Request<ContractReqParams & ListenerReqParams>, res: Response) => {
-      const { name } = eventListenerState(req.body);
-      if (name instanceof Error) {
-        return res.status(400).send(name.message);
+      const interactionService = container.model.interactionService();
+      const { historical, promptly } = req.body;
+      if (typeof historical === 'object') {
+        if (historical) {
+          const { syncHeight } = historical;
+          if (typeof syncHeight !== 'number') {
+            return res.status(400).send('Invalid historical start height block number');
+          }
+          await interactionService.createHistorySync(req.params.listener, syncHeight);
+        } else {
+          await interactionService.deleteHistoricalSync(req.params.listener);
+        }
+      }
+      if (typeof promptly === 'object') {
+        if (promptly) {
+          await container.model.interactionService().createPromptlySync(req.params.listener);
+        } else {
+          await interactionService.deletePromptlySync(req.params.listener);
+        }
       }
 
-      const updated = await container.model.contractService().updateListener({
-        ...req.params.listener,
-        name,
-      });
-
-      return res.json(updated);
+      return res.json(true);
     },
   )
   .get(

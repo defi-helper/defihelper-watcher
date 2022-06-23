@@ -1,15 +1,9 @@
-import container from '@container';
 import { Factory } from '@services/Container';
-import { Emitter } from '@services/Event';
 import { ethers } from 'ethers';
 import { v4 as uuid } from 'uuid';
 import { Contract, ContractTable, EventListener, EventListenerTable } from './Entity';
 
 export class ContractService {
-  public readonly onEventListenerCreated = new Emitter<EventListener>((eventListener) => {
-    container.model.queueService().push('eventsEventListenerCreated', { id: eventListener.id });
-  });
-
   constructor(
     readonly contractTable: Factory<ContractTable>,
     readonly listenerTable: Factory<EventListenerTable>,
@@ -63,13 +57,13 @@ export class ContractService {
   }
 
   async createListener(contract: Contract, name: string) {
-    const existing = await this.listenerTable()
+    const duplicate = await this.listenerTable()
       .where({
         name,
         contract: contract.id,
       })
       .first();
-    if (existing) return existing;
+    if (duplicate) return duplicate;
 
     const created = {
       id: uuid(),
@@ -79,23 +73,8 @@ export class ContractService {
       updatedAt: new Date(),
     };
     await this.listenerTable().insert(created);
-    this.onEventListenerCreated.emit(created);
 
     return created;
-  }
-
-  async updateListener(listener: EventListener) {
-    const updated = {
-      ...listener,
-      updatedAt: new Date(),
-    };
-    await this.listenerTable()
-      .where({
-        id: listener.id,
-      })
-      .update(updated);
-
-    return updated;
   }
 
   async deleteListener(listener: EventListener) {

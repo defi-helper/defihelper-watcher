@@ -1,15 +1,31 @@
 import { Contract, EventListener } from '@models/Contract/Entity';
 import { Factory } from '@services/Container';
 import { v4 as uuid } from 'uuid';
-import { HistorySync, HistorySyncTable, WalletInteraction, WalletInteractionTable } from './Entity';
+import {
+  HistorySync,
+  HistorySyncTable,
+  PromptlySync,
+  PromptlySyncTable,
+  WalletInteraction,
+  WalletInteractionTable,
+} from './Entity';
 
 export class InteractionService {
   constructor(
     readonly walletInteractionTable: Factory<WalletInteractionTable>,
     readonly historySyncTable: Factory<HistorySyncTable>,
+    readonly promptlySyncTable: Factory<PromptlySyncTable>,
   ) {}
 
   async createHistorySync({ id }: EventListener, syncHeight: number) {
+    const duplicate = await this.historySyncTable().where('eventListener', id).first();
+    if (duplicate) {
+      return this.updateHistorySync({
+        ...duplicate,
+        syncHeight,
+      });
+    }
+
     const created: HistorySync = {
       id: uuid(),
       eventListener: id,
@@ -31,6 +47,29 @@ export class InteractionService {
     await this.historySyncTable().where('id', updated.id).update(updated);
 
     return updated;
+  }
+
+  async deleteHistoricalSync({ id }: EventListener) {
+    await this.historySyncTable().where('eventListener', id).delete();
+  }
+
+  async createPromptlySync({ id }: EventListener) {
+    const duplicate = await this.promptlySyncTable().where('eventListener', id).first();
+    if (duplicate) return duplicate;
+
+    const created: PromptlySync = {
+      id: uuid(),
+      eventListener: id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    await this.promptlySyncTable().insert(created);
+
+    return created;
+  }
+
+  async deletePromptlySync({ id }: EventListener) {
+    await this.promptlySyncTable().where('eventListener', id).delete();
   }
 
   async createWalletInteraction(

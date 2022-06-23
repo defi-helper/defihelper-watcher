@@ -12,26 +12,25 @@ import {
 } from '../../api';
 import { Modal } from '../../components/modal';
 
-interface EventListenerState {
-  id?: string;
+interface EventListenerCreateState {
   name: string;
 }
 
-type EventListenerAction =
-  | { type: 'setName'; value: string }
-  | { type: 'setSyncHeight'; value: number };
+type EventListenerAction = { type: 'setName'; value: string };
 
-function EventListenerForm(props: {
+type OnCreateListener = (eventListenerState: EventListenerCreateState) => any;
+
+function EventListenerCreateForm(props: {
   contract: Contract;
-  state: EventListenerState;
+  state: EventListenerCreateState;
   error: string;
-  onSave: (eventListenerState: EventListenerState) => any;
+  onSave: OnCreateListener;
 }) {
   const events = (props.contract.abi ?? [])
     .filter(({ type }) => type === 'event')
     .map(({ name }) => name);
   const [eventListenerState, eventListenerDispatcher] = useReducer(
-    (state: EventListenerState, action: EventListenerAction) => {
+    (state: EventListenerCreateState, action: EventListenerAction) => {
       switch (action.type) {
         case 'setName':
           return { ...state, name: action.value };
@@ -64,6 +63,78 @@ function EventListenerForm(props: {
         </select>
         <div style={{ color: 'red' }}>{props.error}</div>
         <button onClick={() => props.onSave(eventListenerState)}>Save</button>
+      </fieldset>
+    </form>
+  );
+}
+
+type OnUpdateListener = (
+  eventListener: EventListener,
+  config: Parameters<typeof updateEventListener>[2],
+) => any;
+
+function EventListenerUpdateForm(props: {
+  contract: Contract;
+  state: EventListener;
+  error: string;
+  onSave: OnUpdateListener;
+}) {
+  const [promptly, setPromptly] = useState<boolean>(props.state.promptlyId !== null);
+  const [historical, setHistorical] = useState<boolean>(props.state.historicalId !== null);
+  const [syncHeight, setSyncHeight] = useState<number>(
+    props.state.historicalId !== null ? props.state.sync.syncHeight : 0,
+  );
+
+  return (
+    <form action="#">
+      <fieldset>
+        <div>
+          <label htmlFor="listener-name">Name</label>
+          <div>{props.state.name}</div>
+        </div>
+        <div>
+          <label htmlFor="listener-name">Promptly sync</label>
+          <div>
+            <input
+              type="checkbox"
+              checked={promptly}
+              onChange={(e) => setPromptly(e.target.checked)}
+            />
+          </div>
+        </div>
+        <div>
+          <label htmlFor="listener-name">Historical sync</label>
+          <div>
+            <input
+              type="checkbox"
+              checked={historical}
+              onChange={(e) => setHistorical(e.target.checked)}
+            />
+          </div>
+        </div>
+        {historical && (
+          <div>
+            <label htmlFor="listener-name">Sync height</label>
+            <div>
+              <input
+                type="input"
+                value={String(syncHeight)}
+                onChange={(e) => setSyncHeight(Number(e.target.value))}
+              />
+            </div>
+          </div>
+        )}
+        <div style={{ color: 'red' }}>{props.error}</div>
+        <button
+          onClick={() =>
+            props.onSave(props.state, {
+              promptly: promptly ? {} : null,
+              historical: historical ? { syncHeight } : null,
+            })
+          }
+        >
+          Save
+        </button>
       </fieldset>
     </form>
   );
@@ -126,7 +197,11 @@ export function ContractPage({ contractId }: Props) {
   const [eventListenersPage, setEventListenersPage] = useState<number>(1);
   const [eventListeners, setEventListeners] = useState<EventListener[]>([]);
   const [eventListenersCount, setEventListenersCount] = useState<number>(0);
-  const [eventListenerForm, setEventListenerForm] = useState<EventListenerState | null>(null);
+  const [eventListenerCreateForm, setEventListenerCreateForm] =
+    useState<EventListenerCreateState | null>(null);
+  const [eventListenerUpdateForm, setEventListenerUpdateForm] = useState<EventListener | null>(
+    null,
+  );
   const [addModalError, setAddModalError] = useState<string>('');
 
   const onReloadEventListenerList = () => {
@@ -150,17 +225,26 @@ export function ContractPage({ contractId }: Props) {
     onReloadEventListenerList();
   };
 
-  const onSave = async (state: EventListenerState) => {
+  const onCreate = async (state: EventListenerCreateState) => {
     if (contract === null || contract instanceof Error) return;
 
     setAddModalError('');
     try {
-      if (state.id !== undefined) {
-        await updateEventListener(contract.id, state.id, state.name);
-      } else {
-        await createEventListener(contract.id, state.name);
-      }
-      setEventListenerForm(null);
+      await createEventListener(contract.id, state.name);
+      setEventListenerCreateForm(null);
+      onReloadEventListenerList();
+    } catch (e: any) {
+      setAddModalError(e.response.data);
+    }
+  };
+
+  const onUpdate: OnUpdateListener = async (listener, config) => {
+    if (contract === null || contract instanceof Error) return;
+
+    setAddModalError('');
+    try {
+      await updateEventListener(contract.id, listener.id, config);
+      setEventListenerUpdateForm(null);
       onReloadEventListenerList();
     } catch (e: any) {
       setAddModalError(e.response.data);
@@ -227,7 +311,7 @@ export function ContractPage({ contractId }: Props) {
                 eventListener={eventListener}
                 contract={contract}
                 key={eventListener.id}
-                onUpdate={(eventListener) => setEventListenerForm(eventListener)}
+                onUpdate={(eventListener) => setEventListenerUpdateForm(eventListener)}
                 onDelete={onDelete}
               />
             ))}
@@ -243,7 +327,7 @@ export function ContractPage({ contractId }: Props) {
         <div>
           <button
             onClick={() =>
-              setEventListenerForm({
+              setEventListenerCreateForm({
                 name: (
                   (contract.abi ?? []).find(({ type }) => type === 'event') ?? {
                     name: '',
@@ -257,20 +341,36 @@ export function ContractPage({ contractId }: Props) {
         </div>
       </div>
       {!contract || (
-        <Modal
-          header={<h3>Add event listener</h3>}
-          isVisible={eventListenerForm !== null}
-          onClose={() => setEventListenerForm(null)}
-        >
-          {eventListenerForm === null || (
-            <EventListenerForm
-              contract={contract}
-              state={eventListenerForm}
-              onSave={onSave}
-              error={addModalError}
-            />
-          )}
-        </Modal>
+        <div>
+          <Modal
+            header={<h3>Add event listener</h3>}
+            isVisible={eventListenerCreateForm !== null}
+            onClose={() => setEventListenerCreateForm(null)}
+          >
+            {eventListenerCreateForm === null || (
+              <EventListenerCreateForm
+                contract={contract}
+                state={eventListenerCreateForm}
+                onSave={onCreate}
+                error={addModalError}
+              />
+            )}
+          </Modal>
+          <Modal
+            header={<h3>Update event listener</h3>}
+            isVisible={eventListenerUpdateForm !== null}
+            onClose={() => setEventListenerUpdateForm(null)}
+          >
+            {eventListenerUpdateForm === null || (
+              <EventListenerUpdateForm
+                contract={contract}
+                state={eventListenerUpdateForm}
+                onSave={onUpdate}
+                error={addModalError}
+              />
+            )}
+          </Modal>
+        </div>
       )}
     </div>
   );

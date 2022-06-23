@@ -48,11 +48,16 @@ export class ModelContainer extends Container<typeof AppContainer> {
     this.parent.database,
   );
 
+  readonly promptlySyncTable = Models.Interaction.Entity.promptlySyncTableFactory(
+    this.parent.database,
+  );
+
   readonly interactionService = singleton(
     () =>
       new Models.Interaction.Service.InteractionService(
         this.walletInteractionTable,
         this.historySyncTable,
+        this.promptlySyncTable,
       ),
   );
 }

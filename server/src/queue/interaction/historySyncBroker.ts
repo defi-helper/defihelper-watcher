@@ -14,7 +14,7 @@ export default async function (process: Process) {
     )
     .innerJoin(contractTableName, `${contractTableName}.id`, `${eventListenerTableName}.contract`)
     .whereNotNull('abi')
-    .where('enabled', true);
+    .where(`${contractTableName}.enabled`, true);
 
   const queue = container.model.queueService();
   const interaction = container.model.interactionService();
