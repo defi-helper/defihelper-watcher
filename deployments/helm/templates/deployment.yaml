@@ -30,6 +30,10 @@ spec:
       serviceAccountName: {{ include "website.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      hostAliases:
+        - ip: 172.67.205.96
+          hostnames:
+            - polygon.focusnodes.com
       containers:
         - name: nginx
           imagePullPolicy: Always
