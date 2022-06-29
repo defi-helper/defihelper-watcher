@@ -1,7 +1,10 @@
 import { Contract, EventListener } from '@models/Contract/Entity';
 import { Factory } from '@services/Container';
+import * as ethers from 'ethers';
 import { v4 as uuid } from 'uuid';
 import {
+  Event,
+  EventTable,
   HistorySync,
   HistorySyncTable,
   PromptlySync,
@@ -15,9 +18,10 @@ export class InteractionService {
     readonly walletInteractionTable: Factory<WalletInteractionTable>,
     readonly historySyncTable: Factory<HistorySyncTable>,
     readonly promptlySyncTable: Factory<PromptlySyncTable>,
+    readonly eventTable: Factory<EventTable>,
   ) {}
 
-  async createHistorySync({ id }: EventListener, syncHeight: number) {
+  async createHistorySync({ id }: EventListener, syncHeight: number, saveEvents: boolean) {
     const duplicate = await this.historySyncTable().where('eventListener', id).first();
     if (duplicate) {
       return this.updateHistorySync({
@@ -31,6 +35,7 @@ export class InteractionService {
       eventListener: id,
       syncHeight,
       task: null,
+      saveEvents,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -89,6 +94,21 @@ export class InteractionService {
       .insert(created)
       .onConflict(['network', 'contract', 'eventName', 'wallet'])
       .ignore();
+
+    return created;
+  }
+
+  async createEvent({ blockNumber, transactionHash, event }: ethers.Event) {
+    if (!event) throw new Error('Event name not found');
+
+    const created: Event = {
+      id: uuid(),
+      blockNumber,
+      transactionHash,
+      event,
+      createdAt: new Date(),
+    };
+    await this.eventTable().insert(created);
 
     return created;
   }

@@ -52,12 +52,15 @@ export class ModelContainer extends Container<typeof AppContainer> {
     this.parent.database,
   );
 
+  readonly eventTable = Models.Interaction.Entity.eventTableFactory(this.parent.database);
+
   readonly interactionService = singleton(
     () =>
       new Models.Interaction.Service.InteractionService(
         this.walletInteractionTable,
         this.historySyncTable,
         this.promptlySyncTable,
+        this.eventTable,
       ),
   );
 }

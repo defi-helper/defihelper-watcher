@@ -131,6 +131,7 @@ export interface EventListener {
     currentBlock: number;
     syncHeight: number;
     progress: number;
+    saveEvents: boolean;
   };
   syncHeight: number | null;
   updatedAt: string;
@@ -186,7 +187,7 @@ export function createEventListener(contractId: string, name: string) {
 export function updateEventListener(
   contractId: string,
   id: string,
-  config: { promptly: {} | null; historical: { syncHeight: number } | null },
+  config: { promptly: {} | null; historical: { syncHeight: number; saveEvents: boolean } | null },
 ) {
   return axios
     .put<EventListener>(`/api/contract/${contractId}/event-listener/${id}`, config)

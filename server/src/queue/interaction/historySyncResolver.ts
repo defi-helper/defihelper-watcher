@@ -58,6 +58,10 @@ export default async function (process: Process) {
   await events.reduce<Promise<WalletInteraction | null>>(async (prev, event) => {
     await prev;
 
+    if (historySync.saveEvents) {
+      await interactionService.createEvent(event);
+    }
+
     const receipt = await event.getTransactionReceipt();
     return interactionService.createWalletInteraction(contract, listener, receipt.from);
   }, Promise.resolve(null));

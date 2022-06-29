@@ -18,6 +18,7 @@ export interface HistorySync {
   eventListener: string;
   syncHeight: number;
   task: string | null;
+  saveEvents: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,3 +45,17 @@ export const walletInteractionTableFactory = createTableFactory<WalletInteractio
 );
 
 export type WalletInteractionTable = ReturnType<ReturnType<typeof walletInteractionTableFactory>>;
+
+export interface Event {
+  id: string;
+  blockNumber: number;
+  transactionHash: string;
+  event: string;
+  createdAt: Date;
+}
+
+export const eventTableName = 'event';
+
+export const eventTableFactory = createTableFactory<Event>(eventTableName);
+
+export type EventTable = ReturnType<ReturnType<typeof eventTableFactory>>;

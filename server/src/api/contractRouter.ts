@@ -237,6 +237,7 @@ export default Router()
           `${promptlySyncTableName}.id as promptlyId`,
           `${historySyncTableName}.id as historicalId`,
           `${historySyncTableName}.syncHeight`,
+          `${historySyncTableName}.saveEvents`,
           `${historySyncTableName}.updatedAt as syncAt`,
         ])
         .innerJoin(
@@ -261,6 +262,7 @@ export default Router()
       return res.json(
         eventListenersList.map((eventListener) => {
           const syncHeight = eventListener.syncHeight ?? 0;
+          const { saveEvents } = eventListener;
           return {
             ...eventListener,
             sync: {
@@ -273,6 +275,7 @@ export default Router()
                   .multipliedBy(100)
                   .toFixed(0),
               ),
+              saveEvents,
             },
           };
         }),
@@ -312,11 +315,14 @@ export default Router()
       const { historical, promptly } = req.body;
       if (typeof historical === 'object') {
         if (historical) {
-          const { syncHeight } = historical;
+          const { syncHeight, saveEvents } = historical;
           if (typeof syncHeight !== 'number') {
             return res.status(400).send('Invalid historical start height block number');
           }
-          await interactionService.createHistorySync(req.params.listener, syncHeight);
+          if (typeof saveEvents !== 'boolean') {
+            return res.status(400).send('Invalid historical save events flag');
+          }
+          await interactionService.createHistorySync(req.params.listener, syncHeight, saveEvents);
         } else {
           await interactionService.deleteHistoricalSync(req.params.listener);
         }

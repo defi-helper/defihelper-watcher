@@ -84,6 +84,9 @@ function EventListenerUpdateForm(props: {
   const [syncHeight, setSyncHeight] = useState<number>(
     props.state.historicalId !== null ? props.state.sync.syncHeight : 0,
   );
+  const [saveEvents, setSaveEvents] = useState<boolean>(
+    props.state.historicalId !== null ? props.state.sync.saveEvents : false,
+  );
 
   return (
     <form action="#">
@@ -122,6 +125,14 @@ function EventListenerUpdateForm(props: {
                 onChange={(e) => setSyncHeight(Number(e.target.value))}
               />
             </div>
+            <label htmlFor="listener-name">Save events</label>
+            <div>
+              <input
+                type="checkbox"
+                checked={saveEvents}
+                onChange={(e) => setSaveEvents(e.target.checked)}
+              />
+            </div>
           </div>
         )}
         <div style={{ color: 'red' }}>{props.error}</div>
@@ -129,7 +140,7 @@ function EventListenerUpdateForm(props: {
           onClick={() =>
             props.onSave(props.state, {
               promptly: promptly ? {} : null,
-              historical: historical ? { syncHeight } : null,
+              historical: historical ? { syncHeight, saveEvents } : null,
             })
           }
         >
