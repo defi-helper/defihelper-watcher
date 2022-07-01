@@ -321,6 +321,7 @@ export function ContractPage({ contractId }: Props) {
             <tr>
               <th>Name</th>
               <th>Progress</th>
+              <th></th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
