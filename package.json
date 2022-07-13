@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "lint": "lint-staged",
+    "migrate": "node ./server/dist/migrate.js",
     "server:build": "tsc -p ./server",
     "server:watch": "tsc-watch -p ./server --pretty --onSuccess 'node ./server/dist/index.js'",
     "client:build": "parcel build ./client/index.tsx --dist-dir ./public/dist",
