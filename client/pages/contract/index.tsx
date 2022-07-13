@@ -162,7 +162,7 @@ function EventListenerComponent({
   onUpdate: (listener: EventListener) => any;
   onDelete: (listener: EventListener) => any;
 }) {
-  const { sync } = eventListener;
+  const { sync, historicalId, promptlyId } = eventListener;
   return (
     <tr>
       <td>
@@ -171,17 +171,25 @@ function EventListenerComponent({
         </a>
       </td>
       <td>
-        <div className="progress">
-          <span
-            className={sync.progress >= 90 ? 'green' : 'red'}
-            style={{
-              width: `${sync.progress}%`,
-            }}
-          ></span>
-        </div>
+        {
+          historicalId &&
+          <div className="progress">
+            <span
+              className={sync.progress >= 90 ? 'green' : 'red'}
+              style={{
+                width: `${sync.progress}%`,
+              }}
+            ></span>
+          </div>
+        }
+
         <div>
-          {sync.syncHeight}/{sync.currentBlock}
+          {historicalId ? `${sync.syncHeight}/${sync.currentBlock}` : '-'}
         </div>
+      </td>
+      <td>
+        historical: <b>{historicalId ? 'enabled' : 'disabled'}</b><br/>
+        promptly: <b>{promptlyId ? 'enabled' : 'disabled'}</b>
       </td>
       <td>
         <div style={{ textAlign: 'right' }}>
@@ -313,6 +321,7 @@ export function ContractPage({ contractId }: Props) {
             <tr>
               <th>Name</th>
               <th>Progress</th>
+              <th></th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
