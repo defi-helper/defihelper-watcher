@@ -5,11 +5,19 @@ import container from '@container';
 
 const options = cli([{ name: 'period', alias: 'p', type: String }]);
 
-const queue = container.model.queueService();
-switch (options.period) {
-  case 'minute10':
-    queue.push('scheduleMinute10', {});
-    break;
-  default:
-    throw new Error('Invalid period');
+function pushPeriod() {
+  const queue = container.model.queueService();
+  switch (options.period) {
+    case 'minute10':
+      return queue.push('scheduleMinute10', {});
+    default:
+      throw new Error('Invalid period');
+  }
 }
+
+pushPeriod()
+  .then(() => process.exit(0))
+  .catch((e) => {
+    container.logger().error(e);
+    process.exit(1);
+  });
