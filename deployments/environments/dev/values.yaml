@@ -140,6 +140,19 @@ ingress:
 #      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:deferred"'
 #      schedule: "* * * * *"
 
+migrator:
+  labels:
+    app: migrator
+    component: migrator
+    environment: dev
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 200m
+    limits:
+      memory: 256Mi
+      cpu: 1200m
+
 autoscaling:
   enabled: false
   minReplicas: 1

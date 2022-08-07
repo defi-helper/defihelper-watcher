@@ -66,10 +66,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 1024Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 2048Mi
+            memory: 256Mi
             cpu: 500m
       ethresolve:
         name: ethresolve
@@ -84,10 +84,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       bscresolve:
         name: bscresolve
@@ -102,10 +102,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       polygonresolve:
         name: polygonresolve
@@ -120,10 +120,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       moonriverresolve:
         name: moonriverresolve
@@ -138,10 +138,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       avaxresolve:
         name: avaxresolve
@@ -156,10 +156,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
 
 handlers:
@@ -181,6 +181,19 @@ handlers:
     queue-deferred:
       command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:deferred"'
       schedule: "* * * * *"
+
+migrator:
+  labels:
+    app: migrator
+    component: migrator
+    environment: dev
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 200m
+    limits:
+      memory: 256Mi
+      cpu: 1200m
 
 autoscaling:
   enabled: true
