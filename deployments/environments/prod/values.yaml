@@ -57,6 +57,7 @@ broker:
         name: queue
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:consume -- -q scanner_tasks_default"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -75,6 +76,7 @@ broker:
         name: ethresolve
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1 --expiration 300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -93,6 +95,7 @@ broker:
         name: bscresolve
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 56 --expiration 300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -111,6 +114,7 @@ broker:
         name: polygonresolve
         command: '"/bin/sh","-c","ln -s  ./configuration/.env ./.env && npm run events:resolve -- --network 137 --expiration 300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -129,6 +133,7 @@ broker:
         name: moonriverresolve
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1285 --expiration 300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -147,6 +152,7 @@ broker:
         name: avaxresolve
         command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 43114 --expiration 300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
