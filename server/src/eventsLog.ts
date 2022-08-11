@@ -11,11 +11,11 @@ rabbit
   .createQueue('scanner_events_log', { durable: false, autoDelete: true }, (msg, ack) => {
     ack();
     const {
-      network,
+      contract,
       events: { length },
       from,
       to,
     } = JSON.parse(msg.content.toString());
-    console.info(`${network}:{${from}-${to}} ${length}`);
+    console.info(`${contract.network}:{${from}-${to}} ${length}`);
   })
   .then(() => rabbit.bindToTopic('scanner_events_log', 'scanner.events.*'));

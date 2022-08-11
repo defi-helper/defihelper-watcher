@@ -13,6 +13,7 @@ function providerFactory(url: URL) {
 
 export interface Config {
   ethMainNode: URL[];
+  goerliNode: URL[];
   bscMainNode: URL[];
   polygonMainNode: URL[];
   moonriverMainNode: URL[];
@@ -24,6 +25,11 @@ export class BlockchainContainer extends Container<Config> {
     1: {
       id: 1,
       provider: singleton(providerFactory(this.parent.ethMainNode[0])),
+      historySyncStep: 5000,
+    },
+    5: {
+      id: 5,
+      provider: singleton(providerFactory(this.parent.goerliNode[0])),
       historySyncStep: 5000,
     },
     56: {

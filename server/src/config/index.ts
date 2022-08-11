@@ -52,6 +52,7 @@ export default {
   },
   blockchain: {
     ethMainNode: array(process.env.ETH_NODE ?? '[]').map(url),
+    goerliNode: array(process.env.GOERLI_NODE ?? '[]').map(url),
     bscMainNode: array(process.env.BSC_NODE ?? '[]').map(url),
     polygonMainNode: array(process.env.POLYGON_NODE ?? '[]').map(url),
     moonriverMainNode: array(process.env.MOONRIVER_NODE ?? '[]').map(url),
