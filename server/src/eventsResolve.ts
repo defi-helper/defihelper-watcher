@@ -140,13 +140,11 @@ let isStoped = false;
                   return null;
                 }
 
-                console.info({ syncHeight, currentBlock });
                 const events = await contract.queryFilter(
                   contract.filters[listener.name](),
                   syncHeight,
                   currentBlock,
                 );
-                console.info(events.length);
                 await cache.setex(cacheKey, 3600, currentBlock + 1);
                 if (events.length === 0) return null;
 
