@@ -43,82 +43,38 @@ ingress:
       hosts:
         - watcher-dev.defihelper.info
 
-#broker:
-#  maxReplicas: 10
-#  maxReadyMessagesForHpa: 25
-#  process:
-#    labels:
-#      app: app
-#      component: broker
-#      environment: dev
-#      queue: process
-#    queues:
-#      queue:
-#        name: queue
-#        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:consume -- -q scanner_tasks_default"'
-#        replicas: 1
-#        resources:
-#          requests:
-#            memory: 2048Mi
-#            cpu: 1
-#          limits:
-#            memory: 4096Mi
-#            cpu: 2
-#      ethresolve:
-#        name: ethresolve
-#        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1 --expiration 300000"'
-#        replicas: 1
-#        resources:
-#          requests:
-#            memory: 256Mi
-#            cpu: 200m
-#          limits:
-#            memory: 512Mi
-#            cpu: 500m
-#      bscresolve:
-#        name: bscresolve
-#        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 56 --expiration 300000"'
-#        replicas: 1
-#        resources:
-#          requests:
-#            memory: 256Mi
-#            cpu: 200m
-#          limits:
-#            memory: 512Mi
-#            cpu: 500m
-#      polygonresolve:
-#        name: polygonresolve
-#        command: '"/bin/sh","-c","ln -s  ./configuration/.env ./.env && npm run events:resolve -- --network 137 --expiration 300000"'
-#        replicas: 1
-#        resources:
-#          requests:
-#            memory: 256Mi
-#            cpu: 200m
-#          limits:
-#            memory: 512Mi
-#            cpu: 500m
-#      moonriverresolve:
-#        name: moonriverresolve
-#        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1285 --expiration 300000"'
-#        replicas: 1
-#        resources:
-#          requests:
-#            memory: 256Mi
-#            cpu: 200m
-#          limits:
-#            memory: 512Mi
-#            cpu: 500m
-#      avaxresolve:
-#        name: avaxresolve
-#        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 43114 --expiration 300000"'
-#        replicas: 1
-#        resources:
-#          requests:
-#            memory: 256Mi
-#            cpu: 200m
-#          limits:
-#            memory: 512Mi
-#            cpu: 500m
+broker:
+  maxReplicas: 10
+  maxReadyMessagesForHpa: 25
+  process:
+    labels:
+      app: app
+      component: broker
+      environment: dev
+      queue: process
+    queues:
+      queue:
+        name: queue
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:consume -- -q scanner_tasks_default"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 2048Mi
+            cpu: 1
+          limits:
+            memory: 4096Mi
+            cpu: 2
+      goerliresolve:
+        name: goerliresolve
+        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 5 --interval 3000 --expiration 300000"'
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 200m
+          limits:
+            memory: 512Mi
+            cpu: 500m
 
 #handlers:
 #  labels:
