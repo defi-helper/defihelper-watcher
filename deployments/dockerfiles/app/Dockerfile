@@ -19,4 +19,5 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/server/dist ./server/dist
 COPY --from=build /app/public/dist ./public/dist
 EXPOSE 8080
-CMD [ "/bin/sh","-c","ln -s ./configuration/.env ./.env && node ./server/dist"]
+
+CMD [ "node","./server/dist" ]
