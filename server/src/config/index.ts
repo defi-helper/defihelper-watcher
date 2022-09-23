@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '../../../../configuration/.env' });
+dotenv.config({ path: './configuration/.env' });
 
 function int(value: string): number {
   return parseInt(value, 10);
