@@ -55,7 +55,7 @@ broker:
     queues:
       queue:
         name: queue
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:consume -- -q scanner_tasks_default"'
+        command: '"npm","run","queue:consume","--","-q","scanner_tasks_default"'
         replicas: 1
         resources:
           requests:
@@ -66,7 +66,7 @@ broker:
             cpu: 2
       goerliresolve:
         name: goerliresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 5 --interval 3000 --expiration 300000"'
+        command: '"npm","run","events:resolve","--","--network","5","--interval","3000","--expiration","300000"'
         replicas: 1
         resources:
           requests:
@@ -90,10 +90,10 @@ broker:
 #      cpu: 300m
 #  schedules:
 #    minute30:
-#      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute30"'
+#      command: '"npm","run","queue:schedule","--","--period","minute30"'
 #      schedule: "*/30 * * * *"
 #    queue-deferred:
-#      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:deferred"'
+#      command: '"npm","run","queue:deferred"'
 #      schedule: "* * * * *"
 
 migrator:
