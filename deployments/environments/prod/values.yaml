@@ -55,8 +55,9 @@ broker:
     queues:
       queue:
         name: queue
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:consume -- -q scanner_tasks_default"'
+        command: '"npm","run","queue:consume","--","-q","scanner_tasks_default"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -66,15 +67,16 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 1024Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 2048Mi
+            memory: 256Mi
             cpu: 500m
       ethresolve:
         name: ethresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1 --expiration 300000"'
+        command: '"npm","run","events:resolve","--","--network","1","--expiration","300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -84,15 +86,16 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       bscresolve:
         name: bscresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 56 --expiration 300000"'
+        command: '"npm","run","events:resolve","--","--network","56","--expiration","300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -102,15 +105,16 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       polygonresolve:
         name: polygonresolve
-        command: '"/bin/sh","-c","ln -s  ./configuration/.env ./.env && npm run events:resolve -- --network 137 --expiration 300000"'
+        command: '"npm","run","events:resolve","--","--network","137","--expiration","300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -120,15 +124,16 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       moonriverresolve:
         name: moonriverresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 1285 --expiration 300000"'
+        command: '"npm","run","events:resolve","--","--network","1285","--expiration","300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -138,15 +143,16 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
       avaxresolve:
         name: avaxresolve
-        command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run events:resolve -- --network 43114 --expiration 300000"'
+        command: '"npm","run","events:resolve","--","--network","43114","--expiration","300000"'
         replicas: 1
+        graceperiod: 600
         nodeSelector:
           group_name: "apps-jobs"
         tolerations:
@@ -156,10 +162,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 256Mi
+            memory: 128Mi
             cpu: 200m
           limits:
-            memory: 512Mi
+            memory: 256Mi
             cpu: 500m
 
 handlers:
@@ -176,11 +182,24 @@ handlers:
       cpu: 100m
   schedules:
     minute10:
-      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:schedule -- --period minute10"'
+      command: '"npm","run","queue:schedule","--","--period","minute10"'
       schedule: "*/10 * * * *"
     queue-deferred:
-      command: '"/bin/sh","-c","ln -s ./configuration/.env ./.env && npm run queue:deferred"'
+      command: '"npm","run","queue:deferred"'
       schedule: "* * * * *"
+
+migrator:
+  labels:
+    app: migrator
+    component: migrator
+    environment: dev
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 200m
+    limits:
+      memory: 256Mi
+      cpu: 1200m
 
 autoscaling:
   enabled: true
