@@ -32,6 +32,7 @@ export class BlockchainContainer extends Container<Config> {
       id: 5,
       provider: singleton(providerFactory(this.parent.goerliNode[0])),
       historySyncStep: 5000,
+      averageBlockTime: 20,
     },
     56: {
       id: 56,
