@@ -5,6 +5,8 @@ WORKDIR /app
 ARG NODE_ENV
 ENV NODE_ENV ${NODE_ENV:-production}
 
+ENV NODE_OPTIONS=--no-experimental-fetch
+
 COPY package*.json ./
 RUN npm install -g husky cross-env
 RUN npm ci
