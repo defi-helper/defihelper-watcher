@@ -63,6 +63,7 @@ export default async function (process: Process) {
     }
 
     const receipt = await event.getTransactionReceipt();
+    if (!receipt) return null;
     return interactionService.createWalletInteraction(contract, listener, receipt.from);
   }, Promise.resolve(null));
 
