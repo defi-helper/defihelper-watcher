@@ -75,17 +75,6 @@ broker:
           limits:
             memory: 512Mi
             cpu: 500m
-      goerliresolvedeploy:
-        name: goerliresolvedeploy
-        command: '"npm","run","events:resolveDeploy","--","--network","5","--interval","3000","--expiration","300000"'
-        replicas: 1
-        resources:
-          requests:
-            memory: 256Mi
-            cpu: 200m
-          limits:
-            memory: 512Mi
-            cpu: 500m
 
 #handlers:
 #  labels:
