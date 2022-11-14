@@ -39,19 +39,15 @@ export default async function (process: Process) {
     throw new Error(`Event "${listener.name}" not found in contract interface "${contract.id}"`);
   }
 
-  const currentBlockNumber = await provider.getBlockNumber();
-  if (currentBlockNumber <= historySync.syncHeight) {
+  if (historySync.deployHeight <= historySync.syncHeight) {
     return process.later(dayjs().add(1, 'minutes').toDate());
   }
-  const toHeight =
-    historySync.syncHeight + step <= currentBlockNumber
-      ? historySync.syncHeight + step
-      : currentBlockNumber;
 
+  const toHeight = historySync.syncHeight - step;
   const events: Event[] | Error = await contractProvider.queryFilter(
     eventFilter(),
-    historySync.syncHeight,
     toHeight,
+    historySync.syncHeight,
   );
 
   const interactionService = container.model.interactionService();

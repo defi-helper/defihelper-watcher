@@ -17,6 +17,7 @@ export interface HistorySync {
   id: string;
   eventListener: string;
   syncHeight: number;
+  deployHeight: number;
   task: string | null;
   saveEvents: boolean;
   createdAt: Date;

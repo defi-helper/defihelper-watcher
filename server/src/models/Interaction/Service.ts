@@ -21,7 +21,12 @@ export class InteractionService {
     readonly eventTable: Factory<EventTable>,
   ) {}
 
-  async createHistorySync({ id }: EventListener, syncHeight: number, saveEvents: boolean) {
+  async createHistorySync(
+    { id }: EventListener,
+    syncHeight: number,
+    deployHeight: number,
+    saveEvents: boolean,
+  ) {
     const duplicate = await this.historySyncTable().where('eventListener', id).first();
     if (duplicate) {
       return this.updateHistorySync({
@@ -33,6 +38,7 @@ export class InteractionService {
     const created: HistorySync = {
       id: uuid(),
       eventListener: id,
+      deployHeight,
       syncHeight,
       task: null,
       saveEvents,
