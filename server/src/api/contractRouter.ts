@@ -315,14 +315,22 @@ export default Router()
       const { historical, promptly } = req.body;
       if (typeof historical === 'object') {
         if (historical) {
-          const { syncHeight, saveEvents } = historical;
+          const { syncHeight, saveEvents, deployHeight } = historical;
           if (typeof syncHeight !== 'number') {
             return res.status(400).send('Invalid historical start height block number');
+          }
+          if (typeof deployHeight !== 'number') {
+            return res.status(400).send('Invalid historical deploy height block number');
           }
           if (typeof saveEvents !== 'boolean') {
             return res.status(400).send('Invalid historical save events flag');
           }
-          await interactionService.createHistorySync(req.params.listener, syncHeight, saveEvents);
+          await interactionService.createHistorySync(
+            req.params.listener,
+            syncHeight,
+            deployHeight,
+            saveEvents,
+          );
         } else {
           await interactionService.deleteHistoricalSync(req.params.listener);
         }
