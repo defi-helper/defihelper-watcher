@@ -39,7 +39,7 @@ export default async function (process: Process) {
     throw new Error(`Event "${listener.name}" not found in contract interface "${contract.id}"`);
   }
 
-  if (historySync.deployHeight <= historySync.syncHeight) {
+  if (contract.startHeight <= historySync.syncHeight) {
     return process.later(dayjs().add(1, 'minutes').toDate());
   }
 
