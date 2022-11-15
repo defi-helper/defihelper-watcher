@@ -1,7 +1,6 @@
 import container from '@container';
 import { Process } from '@models/Queue/Entity';
 import { WalletInteraction } from '@models/Interaction/Entity';
-import dayjs from 'dayjs';
 import { Event } from 'ethers';
 
 interface Params {
@@ -40,7 +39,7 @@ export default async function (process: Process) {
   }
 
   if (contract.startHeight <= historySync.syncHeight) {
-    return process.later(dayjs().add(1, 'minutes').toDate());
+    return process.done();
   }
 
   const toHeight = historySync.syncHeight - step;
