@@ -14,7 +14,7 @@ import { Pagination } from '../../components/pagination';
 
 const networks = {
   1: 'Ethereum',
-  56: 'Binance Smart Chain',
+  56: 'BNB Chain',
   137: 'Polygon',
   1285: 'Moonriver',
   43114: 'Avalanche',
