@@ -60,10 +60,10 @@ broker:
         resources:
           requests:
             memory: 2048Mi
-            cpu: 1
+            cpu: 200m
           limits:
             memory: 4096Mi
-            cpu: 2
+            cpu: 500m
       goerliresolve:
         name: goerliresolve
         command: '"npm","run","events:resolve","--","--network","5","--interval","3000","--expiration","300000"'
