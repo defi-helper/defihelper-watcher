@@ -173,6 +173,13 @@ handlers:
     app: watcher
     component: cronHandler
     environment: prod
+  nodeSelector:
+    group_name: "apps-jobs"
+  tolerations:
+    - key: node-role.kubernetes.io/apps-jobs
+      operator: "Equal"
+      value: "true"
+      effect: NoSchedule
   resources:
     requests:
       memory: 128Mi

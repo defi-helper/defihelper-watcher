@@ -57,6 +57,13 @@ broker:
         name: queue
         command: '"npm","run","queue:consume","--","-q","scanner_tasks_default"'
         replicas: 1
+        nodeSelector:
+          group_name: "service"
+        tolerations:
+          - key: node-role.kubernetes.io/service
+            operator: "Equal"
+            value: "true"
+            effect: NoSchedule
         resources:
           requests:
             memory: 2048Mi
@@ -68,6 +75,13 @@ broker:
         name: goerliresolve
         command: '"npm","run","events:resolve","--","--network","5","--interval","3000","--expiration","300000"'
         replicas: 1
+        nodeSelector:
+          group_name: "service"
+        tolerations:
+          - key: node-role.kubernetes.io/service
+            operator: "Equal"
+            value: "true"
+            effect: NoSchedule
         resources:
           requests:
             memory: 256Mi
@@ -115,8 +129,13 @@ autoscaling:
   maxReplicas: 1
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
-nodeSelector: {}
-tolerations: []
+nodeSelector:
+  group_name: "service"
+tolerations:
+  - key: node-role.kubernetes.io/service
+    operator: "Equal"
+    value: "true"
+    effect: NoSchedule
 affinity: {}
 nameOverride: ""
 fullnameOverride: ""
