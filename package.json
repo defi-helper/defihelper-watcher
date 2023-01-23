@@ -6,7 +6,7 @@
     "lint": "lint-staged",
     "migrate": "node ./server/dist/migrate.js",
     "server:build": "tsc -p ./server",
-    "server:watch": "tsc-watch -p ./server --pretty --onSuccess 'node ./server/dist/index.js'",
+    "server:watch": "tsc-watch -p ./server --pretty --onSuccess 'node ./server/dist/index.js -p 9002'",
     "client:build": "parcel build ./client/index.tsx --dist-dir ./public/dist",
     "client:watch": "parcel watch ./client/index.tsx --dist-dir ./public/dist",
     "start": "node ./server/dist",
@@ -74,6 +74,7 @@
     "redis": "^3.1.2",
     "source-map-support": "^0.5.21",
     "tsc-watch": "^4.2.9",
+    "type-guards": "^0.15.0",
     "typescript": "^4.2.3",
     "use-debounce": "^6.0.1",
     "uuid": "^8.3.2",
@@ -87,7 +88,7 @@
   },
   "devDependencies": {
     "buffer": "^6.0.3",
-    "process": "^0.11.10",
-    "husky": "^8.0.0"
+    "husky": "^8.0.0",
+    "process": "^0.11.10"
   }
 }

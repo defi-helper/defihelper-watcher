@@ -1,12 +1,12 @@
 import container from '@container';
 import { contractTableName, eventListenerTableName } from '@models/Contract/Entity';
-import { historySyncTableName } from '@models/Interaction/Entity';
+import { HistorySync, historySyncTableName } from '@models/Interaction/Entity';
 import { Process, TaskStatus } from '@models/Queue/Entity';
 
 export default async function (process: Process) {
   const syncHistories = await container.model
     .historySyncTable()
-    .column(`${historySyncTableName}.*`)
+    .column<Array<HistorySync>>(`${historySyncTableName}.*`)
     .innerJoin(
       eventListenerTableName,
       `${eventListenerTableName}.id`,
@@ -14,27 +14,36 @@ export default async function (process: Process) {
     )
     .innerJoin(contractTableName, `${contractTableName}.id`, `${eventListenerTableName}.contract`)
     .whereNotNull('abi')
-    .where(`${contractTableName}.enabled`, true);
+    .where(`${contractTableName}.enabled`, true)
+    .where(function () {
+      this.whereNull(`${historySyncTableName}.endHeight`);
+      this.orWhereRaw('?? <> ??', [
+        `${historySyncTableName}.syncHeight`,
+        `${historySyncTableName}.endHeight`,
+      ]);
+    });
 
   const queue = container.model.queueService();
   const interaction = container.model.interactionService();
-  await Promise.all(
-    syncHistories.map(async (historySync) => {
-      let task;
-      if (historySync.task !== null) {
-        task = await queue.table().where('id', historySync.task).first();
-        if (task) {
-          if ([TaskStatus.Pending, TaskStatus.Process].includes(task.status)) return null;
-          return queue.resetAndRestart(task);
-        }
+  syncHistories.reduce<Promise<unknown>>(async (prev, historySync) => {
+    await prev;
+
+    if (historySync.task !== null) {
+      const task = await queue.table().where('id', historySync.task).first();
+      if (task) {
+        return [TaskStatus.Done, TaskStatus.Error].includes(task.status)
+          ? queue.resetAndRestart(task)
+          : null;
       }
-      task = await queue.push('interactionHistorySyncResolver', { id: historySync.id });
-      return interaction.updateHistorySync({
-        ...historySync,
-        task: task.id,
-      });
-    }),
-  );
+    }
+
+    return interaction.updateHistorySync({
+      ...historySync,
+      task: await queue
+        .push('interactionHistorySyncResolver', { id: historySync.id })
+        .then(({ id }) => id),
+    });
+  }, Promise.resolve(null));
 
   return process.done();
 }

@@ -4,66 +4,94 @@ import {
   EventListener,
   eventListenerTableName,
 } from '@models/Contract/Entity';
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
+import type { ParamsDictionary } from 'express-serve-static-core';
+import * as tg from 'type-guards';
 import container from '@container';
 import { json } from 'body-parser';
-import { BigNumber as BN } from 'bignumber.js';
-import { historySyncTableName, promptlySyncTableName } from '@models/Interaction/Entity';
+import {
+  historySyncTableName,
+  promptlySyncTableName,
+  HistorySync,
+} from '@models/Interaction/Entity';
+import { ethers } from 'ethers';
 
-const contractState = (
-  data: any,
-): {
-  name: string | Error;
-  network: number | Error;
-  address: string | Error;
-  startHeight: number | Error;
-  abi: any[] | Error;
-  enabled?: boolean | Error;
-} => {
-  const state: ReturnType<typeof contractState> = {
-    name: new Error('Invalid name'),
-    network: new Error('Invalid network'),
-    address: new Error('Invalid address'),
-    startHeight: new Error('Invalid start height'),
-    abi: new Error('Invalid ABI'),
-    enabled: new Error('Invalid enabled flag'),
+namespace Verify {
+  export function bodyVerify<T, P = ParamsDictionary>(
+    guard: tg.Guard<T>,
+  ): RequestHandler<P, any, T> {
+    return (req, res, next) => {
+      try {
+        return guard(req.body) ? next() : res.status(400).send('');
+      } catch (e) {
+        return (e instanceof Verify.TypeError ? res.status(400) : res.status(500)).send(`${e}`);
+      }
+    };
+  }
+
+  export class TypeError extends Error {
+    constructor(message: string) {
+      super(message);
+      Object.setPrototypeOf(this, TypeError.prototype);
+    }
+  }
+
+  export const throwIf =
+    <T>(guard: tg.Guard<T>, error: string) =>
+    (v: any): v is T => {
+      if (!guard(v)) throw new TypeError(error);
+      return true;
+    };
+
+  export type EthereumAddress = string;
+
+  export const isNotEmpty = (v: any): v is string => typeof v === 'string' && v !== '';
+
+  export const isEthereumAddress = (v: any): v is EthereumAddress => ethers.utils.isAddress(v);
+
+  export const isABI = (v: any): v is string => {
+    if (typeof v !== 'string') return false;
+    try {
+      JSON.parse(v);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  const { name, network, address, startHeight, abi, enabled } = data;
-  if (typeof name === 'string' && name !== '') {
-    state.name = name;
-  }
-  if (!Number.isNaN(Number(network))) {
-    state.network = Number(network);
-  }
-  if (typeof address === 'string' && /0x[a-z0-9]{40}/i.test(address)) {
-    state.address = address;
-  }
-  if (!Number.isNaN(Number(startHeight))) {
-    state.startHeight = Number(startHeight);
-  }
-  if (typeof abi === 'string') {
-    state.abi = JSON.parse(abi);
-  }
-  if (typeof enabled === 'boolean' || enabled === undefined) {
-    state.enabled = enabled;
-  }
+  export const isContractCreateRequest = tg.isOfShape({
+    name: throwIf(isNotEmpty, 'Invalid name'),
+    network: throwIf(tg.isNumber, 'Invalid network'),
+    address: throwIf(isEthereumAddress, 'Invalid address'),
+    startHeight: throwIf(tg.isNumber, 'Invalid start height'),
+    abi: throwIf(isABI, 'Invalid ABI'),
+  });
 
-  return state;
-};
+  export const isContractUpdateRequest = tg.isOfShape({
+    name: throwIf(tg.isOneOf(isNotEmpty, tg.isUndefined), 'Invalid name'),
+    network: throwIf(tg.isOneOf(tg.isNumber, tg.isUndefined), 'Invalid network'),
+    address: throwIf(tg.isOneOf(isEthereumAddress, tg.isUndefined), 'Invalid address'),
+    startHeight: throwIf(tg.isOneOf(tg.isNumber, tg.isUndefined), 'Invalid start height'),
+    abi: throwIf(tg.isOneOf(isABI, tg.isUndefined), 'Invalid ABI'),
+    enabled: throwIf(tg.isOneOf(tg.isBoolean, tg.isUndefined), 'Invalid enabled flag'),
+  });
 
-const eventListenerState = (data: any): { name: string | Error } => {
-  const state: ReturnType<typeof eventListenerState> = {
-    name: new Error('Invalid name'),
-  };
+  export const isEventListenerCreateRequest = tg.isOfShape({
+    name: throwIf(isNotEmpty, 'Invalid name'),
+  });
 
-  const { name } = data;
-  if (typeof name === 'string' && name !== '') {
-    state.name = name;
-  }
+  export const isHistoryScannerCreateRequest = tg.isOfShape({
+    syncHeight: throwIf(tg.isNumber, 'Invalid sync height'),
+    endHeight: throwIf(tg.isOneOf(tg.isNumber, tg.isNull), 'Invalid end height'),
+    saveEvents: throwIf(tg.isBoolean, 'Invalid save events flag'),
+  });
 
-  return state;
-};
+  export const isHistoryScannerUpdateRequest = tg.isOfShape({
+    syncHeight: throwIf(tg.isOneOf(tg.isNumber, tg.isUndefined), 'Invalid sync height'),
+    endHeight: throwIf(tg.isOneOf(tg.isNumber, tg.isNullOrUndefined), 'Invalid end height'),
+    saveEvents: throwIf(tg.isOneOf(tg.isBoolean, tg.isUndefined), 'Invalid save events flag'),
+  });
+}
 
 interface ContractReqParams {
   contractId: string;
@@ -109,9 +137,7 @@ export default Router()
     const limit = Number(req.query.limit ?? 10);
     const offset = Number(req.query.offset ?? 0);
     const isCount = req.query.count === 'yes';
-    const { network } = req.query;
-    const { address } = req.query;
-    const { name } = req.query;
+    const { network, address, name } = req.query;
 
     const networkFilter = Number(network) || null;
     const addressFilter =
@@ -135,29 +161,63 @@ export default Router()
 
     return res.json(await select.limit(limit).offset(offset));
   })
-  .post('/', json(), async (req, res) => {
-    const { name, network, address, startHeight, abi } = contractState(req.body);
-    if (name instanceof Error) {
-      return res.status(400).send(name.message);
-    }
-    if (network instanceof Error) {
-      return res.status(400).send(network.message);
-    }
-    if (address instanceof Error) {
-      return res.status(400).send(address.message);
-    }
-    if (startHeight instanceof Error) {
-      return res.status(400).send(startHeight.message);
-    }
-    if (abi instanceof Error) {
-      return res.status(400).send(abi.message);
+  .get('/progress', async (req, res) => {
+    const contractsId = Array.isArray(req.query.contracts)
+      ? req.query.contracts
+      : [req.query.contracts];
+    const normalContractsId = contractsId
+      .filter((v): v is string => v !== undefined)
+      .map((v) => String(v));
+    if (normalContractsId.length === 0) {
+      return res.json({});
     }
 
-    const contract = await container.model
+    const histories = await container.model
+      .historySyncTable()
+      .column(`${contractTableName}.network`)
+      .column(`${eventListenerTableName}.contract`)
+      .column<Array<HistorySync & { contract: string; network: number }>>(
+        `${historySyncTableName}.*`,
+      )
+      .innerJoin(
+        eventListenerTableName,
+        `${eventListenerTableName}.id`,
+        `${historySyncTableName}.eventListener`,
+      )
+      .innerJoin(contractTableName, `${contractTableName}.id`, `${eventListenerTableName}.contract`)
+      .whereIn(`${eventListenerTableName}.contract`, normalContractsId)
+      .whereNull(`${historySyncTableName}.endHeight`);
+
+    const currentBlockMap = new Map<number, number>();
+    return res.json(
+      await histories.reduce<
+        Promise<Record<string, { currentBlock: number; syncHeight: number; saveEvents: boolean }>>
+      >(async (prev, { contract, syncHeight, network, saveEvents }) => {
+        const map = await prev;
+
+        let currentBlock = currentBlockMap.get(network);
+        if (!currentBlock) {
+          currentBlock = await container.blockchain.byNetwork(network).provider().getBlockNumber();
+          currentBlockMap.set(network, currentBlock);
+        }
+
+        return {
+          ...map,
+          [contract]: {
+            currentBlock,
+            syncHeight,
+            saveEvents,
+          },
+        };
+      }, Promise.resolve({})),
+    );
+  })
+  .post('/', json(), Verify.bodyVerify(Verify.isContractCreateRequest), async (req, res) => {
+    const { name, network, address, startHeight, abi } = req.body;
+    const created = await container.model
       .contractService()
-      .createContract(network, address, name, abi, startHeight);
-
-    return res.json(contract);
+      .createContract(network, address, name, JSON.parse(abi), startHeight);
+    return res.json(created);
   })
   .get('/:contractId', [contractMiddleware], (req: Request<ContractReqParams>, res: Response) =>
     res.json(req.params.contract),
@@ -190,21 +250,21 @@ export default Router()
   )
   .put(
     '/:contractId',
-    [json(), contractMiddleware],
+    json(),
+    Verify.bodyVerify(Verify.isContractUpdateRequest),
+    contractMiddleware,
     async (req: Request<ContractReqParams>, res: Response) => {
       const { contract } = req.params;
-      const { name, network, address, startHeight, abi, enabled } = contractState(req.body);
-
+      const { name, network, address, startHeight, abi, enabled } = req.body;
       const updated = await container.model.contractService().updateContract({
         ...contract,
-        name: name instanceof Error ? contract.name : name,
-        network: network instanceof Error ? contract.network : network,
-        address: address instanceof Error ? contract.address : address,
-        startHeight: startHeight instanceof Error ? contract.startHeight : startHeight,
-        abi: abi instanceof Error ? contract.abi : abi,
-        enabled: enabled instanceof Error || enabled === undefined ? contract.enabled : enabled,
+        name: name ?? contract.name,
+        network: network ?? contract.network,
+        address: address ?? contract.address,
+        startHeight: startHeight ?? contract.startHeight,
+        abi: abi ? JSON.parse(abi) : contract.abi,
+        enabled: enabled ?? contract.enabled,
       });
-
       return res.json(updated);
     },
   )
@@ -218,37 +278,25 @@ export default Router()
       const { name } = req.query;
 
       const select = container.model.contractEventListenerTable().where(function () {
-        this.where('contract', req.params.contract.id);
+        this.where(`${eventListenerTableName}.contract`, req.params.contract.id);
         if (typeof name === 'string' && name !== '') {
-          this.andWhere('name', name);
+          this.andWhere(`${eventListenerTableName}.name`, name);
         }
       });
       if (isCount) {
         return res.json(await select.count().first());
       }
 
-      const provider = container.blockchain.byNetwork(req.params.contract.network).provider();
-      const currentBlock = await provider.getBlockNumber();
-
       const eventListenersList = await select
-        .columns([
+        .columns<Array<EventListener & { contractName: string; promptlyId: string }>>([
           `${eventListenerTableName}.*`,
           `${contractTableName}.name as contractName`,
           `${promptlySyncTableName}.id as promptlyId`,
-          `${historySyncTableName}.id as historicalId`,
-          `${historySyncTableName}.syncHeight`,
-          `${historySyncTableName}.saveEvents`,
-          `${historySyncTableName}.updatedAt as syncAt`,
         ])
         .innerJoin(
           contractTableName,
           `${eventListenerTableName}.contract`,
           `${contractTableName}.id`,
-        )
-        .leftJoin(
-          historySyncTableName,
-          `${eventListenerTableName}.id`,
-          `${historySyncTableName}.eventListener`,
         )
         .leftJoin(
           promptlySyncTableName,
@@ -259,43 +307,26 @@ export default Router()
         .limit(limit)
         .offset(offset);
 
-      return res.json(
-        eventListenersList.map((eventListener) => {
-          const syncHeight = eventListener.syncHeight ?? 0;
-          const { saveEvents } = eventListener;
-          return {
-            ...eventListener,
-            sync: {
-              currentBlock,
-              syncHeight,
-              progress: Number(
-                new BN(syncHeight)
-                  .minus(req.params.contract.startHeight)
-                  .div(new BN(currentBlock).minus(req.params.contract.startHeight))
-                  .multipliedBy(100)
-                  .toFixed(0),
-              ),
-              saveEvents,
-            },
-          };
-        }),
-      );
+      return res.json(eventListenersList);
     },
+  )
+  .get(
+    '/:contractId/event-listener/:listenerId',
+    [contractMiddleware, listenerMiddleware],
+    (req: Request<ContractReqParams & ListenerReqParams>, res: Response) =>
+      res.json(req.params.listener),
   )
   .post(
     '/:contractId/event-listener',
-    [json(), contractMiddleware],
+    json(),
+    Verify.bodyVerify(Verify.isEventListenerCreateRequest),
+    contractMiddleware,
     async (req: Request<ContractReqParams>, res: Response) => {
-      const { name } = eventListenerState(req.body);
-      if (name instanceof Error) {
-        return res.status(400).send(name.message);
-      }
-
-      const eventListener = await container.model
+      const { name } = req.body;
+      const created = await container.model
         .contractService()
         .createListener(req.params.contract, name);
-
-      return res.json(eventListener);
+      return res.json(created);
     },
   )
   .delete(
@@ -309,38 +340,111 @@ export default Router()
   )
   .put(
     '/:contractId/event-listener/:listenerId',
-    [json(), contractMiddleware, listenerMiddleware],
+    json(),
+    contractMiddleware,
+    listenerMiddleware,
     async (req: Request<ContractReqParams & ListenerReqParams>, res: Response) => {
-      const interactionService = container.model.interactionService();
-      const { historical, promptly } = req.body;
-      if (typeof historical === 'object') {
-        if (historical) {
-          const { syncHeight, saveEvents } = historical;
-          if (typeof syncHeight !== 'number') {
-            return res.status(400).send('Invalid historical start height block number');
-          }
-          if (typeof saveEvents !== 'boolean') {
-            return res.status(400).send('Invalid historical save events flag');
-          }
-          await interactionService.createHistorySync(req.params.listener, syncHeight, saveEvents);
-        } else {
-          await interactionService.deleteHistoricalSync(req.params.listener);
-        }
+      const { promptly } = req.body;
+      if (tg.isNullOrUndefined(promptly)) {
+        await container.model.interactionService().deletePromptlySync(req.params.listener);
+      } else {
+        await container.model.interactionService().createPromptlySync(req.params.listener);
       }
-      if (typeof promptly === 'object') {
-        if (promptly) {
-          await container.model.interactionService().createPromptlySync(req.params.listener);
-        } else {
-          await interactionService.deletePromptlySync(req.params.listener);
-        }
-      }
-
       return res.json(true);
     },
   )
   .get(
-    '/:contractId/event-listener/:listenerId',
-    [contractMiddleware, listenerMiddleware],
-    (req: Request<ContractReqParams & ListenerReqParams>, res: Response) =>
-      res.json(req.params.listener),
+    '/:contractId/event-listener/:listenerId/history',
+    [json(), contractMiddleware, listenerMiddleware],
+    async (req: Request<ContractReqParams & ListenerReqParams>, res: Response) => {
+      const limit = Number(req.query.limit ?? 10);
+      const offset = Number(req.query.offset ?? 0);
+      const isCount = req.query.count === 'yes';
+
+      const select = container.model
+        .historySyncTable()
+        .where(`${historySyncTableName}.eventListener`, req.params.listener.id);
+      if (isCount) {
+        return res.json(await select.count().first());
+      }
+
+      const currentBlock = await container.blockchain
+        .byNetwork(req.params.contract.network)
+        .provider()
+        .getBlockNumber();
+
+      return res.json(
+        await select
+          .orderBy(`${historySyncTableName}.createdAt`, 'asc')
+          .limit(limit)
+          .offset(offset)
+          .then((list) =>
+            list.map((history) => ({
+              ...history,
+              sync: { currentBlock },
+            })),
+          ),
+      );
+    },
+  )
+  .post(
+    '/:contractId/event-listener/:listenerId/history',
+    json(),
+    Verify.bodyVerify(Verify.isHistoryScannerCreateRequest),
+    contractMiddleware,
+    listenerMiddleware,
+    async (req: Request<ContractReqParams & ListenerReqParams>, res: Response) => {
+      const { syncHeight, endHeight, saveEvents } = req.body;
+      const created = await container.model
+        .interactionService()
+        .createHistorySync(req.params.listener, syncHeight, endHeight, saveEvents);
+      return res.json(created);
+    },
+  )
+  .put(
+    '/:contractId/event-listener/:listenerId/history/:historyId',
+    json(),
+    Verify.bodyVerify(Verify.isHistoryScannerUpdateRequest),
+    contractMiddleware,
+    listenerMiddleware,
+    async (
+      req: Request<ContractReqParams & ListenerReqParams & { historyId: string }>,
+      res: Response,
+    ) => {
+      const history = await container.model
+        .historySyncTable()
+        .where('id', req.params.historyId)
+        .first();
+      if (!history) {
+        return res.status(404).send('');
+      }
+
+      const { syncHeight, endHeight, saveEvents } = req.body;
+      const updated = await container.model.interactionService().updateHistorySync({
+        ...history,
+        syncHeight: syncHeight ?? history.syncHeight,
+        endHeight: endHeight !== undefined ? endHeight : history.endHeight,
+        saveEvents: saveEvents ?? history.saveEvents,
+      });
+      return res.json(updated);
+    },
+  )
+  .delete(
+    '/:contractId/event-listener/:listenerId/history/:historyId',
+    [json(), contractMiddleware, listenerMiddleware],
+    async (
+      req: Request<ContractReqParams & ListenerReqParams & { historyId: string }>,
+      res: Response,
+    ) => {
+      const history = await container.model
+        .historySyncTable()
+        .where('id', req.params.historyId)
+        .first();
+      if (!history) {
+        return res.status(404).send('');
+      }
+
+      await container.model.interactionService().deleteHistoricalSync(history);
+      return res.status(200).send('');
+    },
   );

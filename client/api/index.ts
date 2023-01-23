@@ -40,6 +40,7 @@ export interface Contract {
     }>;
   }>;
   startHeight: number;
+  enabled: boolean;
   updatedAt: string;
   createdAt: string;
 }
@@ -90,13 +91,12 @@ export function createContract(
   abi: string,
 ) {
   return axios
-    .post<Contract>(`/api/contract`, {
+    .post<Contract>('/api/contract', {
       name,
       network,
       address,
       startHeight,
       abi,
-      fid: '',
     })
     .then(({ data }) => data);
 }
@@ -108,6 +108,7 @@ export async function updateContract(
   address: string,
   startHeight: number,
   abi: string,
+  enabled: boolean,
 ) {
   return axios
     .put<Contract>(`/api/contract/${id}`, {
@@ -116,6 +117,7 @@ export async function updateContract(
       address,
       startHeight,
       abi,
+      enabled,
     })
     .then(({ data }) => data);
 }
@@ -125,18 +127,21 @@ export interface EventListener {
   contract: string;
   contractName: string;
   name: string;
-  historicalId: string | null;
   promptlyId: string | null;
-  sync: {
-    currentBlock: number;
-    syncHeight: number;
-    progress: number;
-    saveEvents: boolean;
-  };
-  syncHeight: number | null;
   updatedAt: string;
   createdAt: string;
   syncAt: string | null;
+}
+
+export interface HistorySync {
+  id: string;
+  eventListener: string;
+  syncHeight: number;
+  endHeight: number | null;
+  saveEvents: boolean;
+  sync: {
+    currentBlock: number;
+  };
 }
 
 export interface EventListenerListFilter {
@@ -187,9 +192,60 @@ export function createEventListener(contractId: string, name: string) {
 export function updateEventListener(
   contractId: string,
   id: string,
-  config: { promptly: {} | null; historical: { syncHeight: number; saveEvents: boolean } | null },
+  config: {
+    promptly: {} | null;
+  },
 ) {
   return axios
     .put<EventListener>(`/api/contract/${contractId}/event-listener/${id}`, config)
     .then(({ data }) => data);
+}
+
+export function getHistoryList(
+  contractId: string,
+  eventListenerId: string,
+  limit: number = 10,
+  offset: number = 0,
+) {
+  return axios
+    .get<HistorySync[]>(
+      `/api/contract/${contractId}/event-listener/${eventListenerId}/history?limit=${limit}&offset=${offset}`,
+    )
+    .then(({ data }) => data);
+}
+
+export function getHistoryCount(contractId: string, eventListenerId: string) {
+  return axios
+    .get<CountResponse>(
+      `/api/contract/${contractId}/event-listener/${eventListenerId}/history?count=yes`,
+    )
+    .then(({ data: { count } }) => count);
+}
+
+export function createHistorySync(
+  contractId: string,
+  listenerId: string,
+  data: { syncHeight: number; endHeight: number | null; saveEvents: boolean },
+) {
+  return axios
+    .post<HistorySync>(`/api/contract/${contractId}/event-listener/${listenerId}/history`, data)
+    .then(({ data }) => data);
+}
+
+export function updateHistorySync(
+  contractId: string,
+  listenerId: string,
+  id: string,
+  data: { syncHeight: number; endHeight: number | null; saveEvents: boolean },
+) {
+  return axios
+    .put<HistorySync>(
+      `/api/contract/${contractId}/event-listener/${listenerId}/history/${id}`,
+      data,
+    )
+    .then(({ data }) => data);
+}
+
+export function deleteHistoricalSync(contractId: string, listenerId: string, id: string) {
+  return axios.delete(`/api/contract/${contractId}/event-listener/${listenerId}/history/${id}`);
 }

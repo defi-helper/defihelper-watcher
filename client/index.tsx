@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { ContractListPage, ContractPage, EventListenerPage, Report } from './pages';
+import { ContractListPage, ContractPage, EventListenerPage, HistoryPage, Report } from './pages';
 
 function Router() {
   if (location.pathname === '/') {
@@ -22,6 +22,13 @@ function Router() {
         eventListenerId={eventListenerRoute[2]}
       />
     );
+  }
+
+  const historyRoute = location.pathname.match(
+    /^\/contract\/([0-9a-z\-]+)\/event-listener\/([0-9a-z\-]+)\/history$/i,
+  );
+  if (historyRoute !== null) {
+    return <HistoryPage contractId={historyRoute[1]} eventListenerId={historyRoute[2]} />;
   }
 
   const syncProgressNetworkRoute = location.pathname.match(
