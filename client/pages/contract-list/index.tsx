@@ -11,9 +11,11 @@ import { useDebounce } from 'use-debounce';
 import { Modal } from '../../components/modal';
 import { NetworkSelector } from '../../components/network-selector';
 import { Pagination } from '../../components/pagination';
+import axios from 'axios';
 
 const networks = {
   1: 'Ethereum',
+  5: 'Goerli',
   56: 'BNB Chain',
   137: 'Polygon',
   1285: 'Moonriver',
@@ -27,6 +29,7 @@ interface ContractState {
   address: string;
   startHeight: number;
   abi: string;
+  enabled: boolean;
 }
 
 type ContractAction =
@@ -34,7 +37,8 @@ type ContractAction =
   | { type: 'setNetwork'; value: number }
   | { type: 'setAddress'; value: string }
   | { type: 'setStartHeight'; value: number }
-  | { type: 'setAbi'; value: string };
+  | { type: 'setAbi'; value: string }
+  | { type: 'setEnabled'; value: boolean };
 
 function ContractForm(props: {
   state: ContractState;
@@ -54,6 +58,8 @@ function ContractForm(props: {
           return { ...state, startHeight: action.value };
         case 'setAbi':
           return { ...state, abi: action.value };
+        case 'setEnabled':
+          return { ...state, enabled: action.value };
         default:
           return state;
       }
@@ -117,6 +123,18 @@ function ContractForm(props: {
           value={contractState.abi}
           onChange={(e) => contractDispatcher({ type: 'setAbi', value: e.target.value })}
         ></textarea>
+        <label htmlFor="contract-enabled">Enabled</label>
+        <input
+          id="contract-enabled"
+          type="checkbox"
+          checked={contractState.enabled}
+          onChange={(e) =>
+            contractDispatcher({
+              type: 'setEnabled',
+              value: e.target.checked,
+            })
+          }
+        />
         <div style={{ color: 'red' }}>{props.error}</div>
         <button onClick={() => props.onSave(contractState)}>Save</button>
       </fieldset>
@@ -167,6 +185,7 @@ export function ContractListPage() {
           state.address,
           state.startHeight,
           state.abi,
+          state.enabled,
         );
       } else {
         await createContract(
@@ -180,7 +199,10 @@ export function ContractListPage() {
       setContractForm(null);
       onReloadContractList();
     } catch (e) {
-      setAddModalError(e.response.data);
+      if (axios.isAxiosError(e)) {
+        return setAddModalError(e.response?.data ?? `${e.message}`);
+      }
+      setAddModalError(`${e}`);
     }
   };
 
@@ -278,6 +300,7 @@ export function ContractListPage() {
                   address: '',
                   startHeight: 0,
                   abi: '',
+                  enabled: true,
                 })
               }
             >

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
 export interface Props {
+  size?: 'tiny' | 'small' | 'medium' | 'large';
   isVisible?: boolean;
   header?: React.ReactNode;
   children?: React.ReactNode;
@@ -12,7 +13,7 @@ export function Modal(props: Props) {
 
   return (
     <div
-      className={`modal ${props.isVisible ? "" : "hidden"}`}
+      className={`modal ${props.isVisible ? '' : 'hidden'} ${props.size ?? 'large'}`}
       onClick={(e) => (e.currentTarget === e.target ? onClose() : null)}
     >
       <div>

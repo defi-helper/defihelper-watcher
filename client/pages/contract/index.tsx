@@ -80,13 +80,18 @@ function EventListenerUpdateForm(props: {
   onSave: OnUpdateListener;
 }) {
   const [promptly, setPromptly] = useState<boolean>(props.state.promptlyId !== null);
+  /*
   const [historical, setHistorical] = useState<boolean>(props.state.historicalId !== null);
   const [syncHeight, setSyncHeight] = useState<number>(
     props.state.historicalId !== null ? props.state.sync.syncHeight : 0,
   );
+  const [endHeight, setEndHeight] = useState<string>(
+    props.state.historicalId !== null ? String(props.state.sync.endHeight) : '',
+  );
   const [saveEvents, setSaveEvents] = useState<boolean>(
     props.state.historicalId !== null ? props.state.sync.saveEvents : false,
   );
+  */
 
   return (
     <form action="#">
@@ -96,19 +101,22 @@ function EventListenerUpdateForm(props: {
           <div>{props.state.name}</div>
         </div>
         <div>
-          <label htmlFor="listener-name">Promptly sync</label>
+          <label htmlFor="promptly-sync">Promptly sync</label>
           <div>
             <input
+              id="promptly-sync"
               type="checkbox"
               checked={promptly}
               onChange={(e) => setPromptly(e.target.checked)}
             />
           </div>
         </div>
+        {/*
         <div>
-          <label htmlFor="listener-name">Historical sync</label>
+          <label htmlFor="historical-sync">Historical sync</label>
           <div>
             <input
+              id="historical-sync"
               type="checkbox"
               checked={historical}
               onChange={(e) => setHistorical(e.target.checked)}
@@ -117,17 +125,28 @@ function EventListenerUpdateForm(props: {
         </div>
         {historical && (
           <div>
-            <label htmlFor="listener-name">Sync height</label>
+            <label htmlFor="historical-height-start">Height start</label>
             <div>
               <input
+                id="historical-height-start"
                 type="input"
                 value={String(syncHeight)}
                 onChange={(e) => setSyncHeight(Number(e.target.value))}
               />
             </div>
-            <label htmlFor="listener-name">Save events</label>
+            <label htmlFor="historical-height-end">Height end</label>
             <div>
               <input
+                id="historical-height-end"
+                type="input"
+                value={endHeight}
+                onChange={(e) => setEndHeight(e.target.value)}
+              />
+            </div>
+            <label htmlFor="historical-save-events">Save events</label>
+            <div>
+              <input
+                id="historical-save-events"
                 type="checkbox"
                 checked={saveEvents}
                 onChange={(e) => setSaveEvents(e.target.checked)}
@@ -135,12 +154,17 @@ function EventListenerUpdateForm(props: {
             </div>
           </div>
         )}
+        */}
         <div style={{ color: 'red' }}>{props.error}</div>
         <button
           onClick={() =>
             props.onSave(props.state, {
               promptly: promptly ? {} : null,
-              historical: historical ? { syncHeight, saveEvents } : null,
+              /*
+              historical: historical
+                ? { syncHeight, endHeight: endHeight !== '' ? Number(endHeight) : null, saveEvents }
+                : null,
+              */
             })
           }
         >
@@ -162,37 +186,25 @@ function EventListenerComponent({
   onUpdate: (listener: EventListener) => any;
   onDelete: (listener: EventListener) => any;
 }) {
-  const { sync, historicalId, promptlyId } = eventListener;
+  const { promptlyId } = eventListener;
   return (
     <tr>
+      <td>{eventListener.name}</td>
       <td>
-        <a href={`/contract/${contract.id}/event-listener/${eventListener.id}`}>
-          {eventListener.name}
-        </a>
-      </td>
-      <td>
-        {
-          historicalId &&
-          <div className="progress">
-            <span
-              className={sync.progress >= 90 ? 'green' : 'red'}
-              style={{
-                width: `${sync.progress}%`,
-              }}
-            ></span>
-          </div>
-        }
-
-        <div>
-          {historicalId ? `${sync.syncHeight}/${sync.currentBlock}` : '-'}
-        </div>
-      </td>
-      <td>
-        historical: <b>{historicalId ? 'enabled' : 'disabled'}</b><br/>
-        promptly: <b>{promptlyId ? 'enabled' : 'disabled'}</b>
+        promptly:{' '}
+        <b>
+          {promptlyId ? (
+            <a href={`/contract/${contract.id}/event-listener/${eventListener.id}`}>enabled</a>
+          ) : (
+            'disabled'
+          )}
+        </b>
       </td>
       <td>
         <div style={{ textAlign: 'right' }}>
+          <a href={`/contract/${contract.id}/event-listener/${eventListener.id}/history`}>
+            History
+          </a>
           <button className="button" onClick={() => onUpdate(eventListener)}>
             Update
           </button>
@@ -320,7 +332,6 @@ export function ContractPage({ contractId }: Props) {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Progress</th>
               <th></th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>

@@ -21,19 +21,17 @@ export class InteractionService {
     readonly eventTable: Factory<EventTable>,
   ) {}
 
-  async createHistorySync({ id }: EventListener, syncHeight: number, saveEvents: boolean) {
-    const duplicate = await this.historySyncTable().where('eventListener', id).first();
-    if (duplicate) {
-      return this.updateHistorySync({
-        ...duplicate,
-        syncHeight,
-      });
-    }
-
+  async createHistorySync(
+    { id }: EventListener,
+    syncHeight: number,
+    endHeight: number | null,
+    saveEvents: boolean,
+  ) {
     const created: HistorySync = {
       id: uuid(),
       eventListener: id,
       syncHeight,
+      endHeight,
       task: null,
       saveEvents,
       createdAt: new Date(),
@@ -54,8 +52,8 @@ export class InteractionService {
     return updated;
   }
 
-  async deleteHistoricalSync({ id }: EventListener) {
-    await this.historySyncTable().where('eventListener', id).delete();
+  deleteHistoricalSync({ id }: HistorySync) {
+    return this.historySyncTable().where('id', id).delete();
   }
 
   async createPromptlySync({ id }: EventListener) {
@@ -100,6 +98,9 @@ export class InteractionService {
 
   async createEvent({ blockNumber, transactionHash, event }: ethers.Event) {
     if (!event) throw new Error('Event name not found');
+
+    const duplicate = await this.eventTable().where({ transactionHash, event }).first();
+    if (duplicate) return duplicate;
 
     const created: Event = {
       id: uuid(),

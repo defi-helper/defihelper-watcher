@@ -1,8 +1,31 @@
+import dayjs from 'dayjs';
 import container from '@container';
 import { Process } from '@models/Queue/Entity';
 import { WalletInteraction } from '@models/Interaction/Entity';
-import dayjs from 'dayjs';
-import { Event } from 'ethers';
+
+function getBlocksInterval(current: number, to: number, step: number) {
+  if (current < to) {
+    const sync = Math.min(current + step, to);
+    return {
+      from: current,
+      sync,
+      to: sync,
+    };
+  }
+  if (current > to) {
+    const sync = Math.max(current - step, to);
+    return {
+      from: sync,
+      sync,
+      to: current,
+    };
+  }
+  return {
+    from: current,
+    to: current,
+    sync: current,
+  };
+}
 
 interface Params {
   id: string;
@@ -31,7 +54,6 @@ export default async function (process: Process) {
   }
 
   const network = container.blockchain.byNetwork(contract.network);
-  const step = network.historySyncStep;
   const provider = network.provider();
   const contractProvider = container.blockchain.contract(contract.address, contract.abi, provider);
   const eventFilter = contractProvider.filters[listener.name];
@@ -40,36 +62,32 @@ export default async function (process: Process) {
   }
 
   const currentBlockNumber = await provider.getBlockNumber();
-  if (currentBlockNumber <= historySync.syncHeight) {
-    return process.later(dayjs().add(1, 'minutes').toDate());
-  }
-  const toHeight =
-    historySync.syncHeight + step <= currentBlockNumber
-      ? historySync.syncHeight + step
-      : currentBlockNumber;
-
-  const events: Event[] | Error = await contractProvider.queryFilter(
-    eventFilter(),
-    historySync.syncHeight,
-    toHeight,
+  const interval = getBlocksInterval(
+    Math.min(historySync.syncHeight, currentBlockNumber),
+    Math.min(historySync.endHeight ?? currentBlockNumber, currentBlockNumber),
+    network.historySyncStep,
   );
+  if (interval.from === interval.to) {
+    return historySync.endHeight === null
+      ? process.later(dayjs().add(1, 'minutes').toDate())
+      : process.done();
+  }
 
   const interactionService = container.model.interactionService();
+  const events = await contractProvider.queryFilter(eventFilter(), interval.from, interval.to);
   await events.reduce<Promise<WalletInteraction | null>>(async (prev, event) => {
     await prev;
 
     if (historySync.saveEvents) {
       await interactionService.createEvent(event);
     }
-
     const receipt = await event.getTransactionReceipt();
-    if (!receipt) return null;
-    return interactionService.createWalletInteraction(contract, listener, receipt.from);
+    return receipt && interactionService.createWalletInteraction(contract, listener, receipt.from);
   }, Promise.resolve(null));
 
   await interactionService.updateHistorySync({
     ...historySync,
-    syncHeight: toHeight,
+    syncHeight: interval.sync,
   });
 
   return process.done();
