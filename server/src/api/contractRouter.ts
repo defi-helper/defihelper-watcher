@@ -7,6 +7,7 @@ import {
 import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import type { ParamsDictionary } from 'express-serve-static-core';
 import * as tg from 'type-guards';
+import { Unshape } from 'type-guards/dist/es2015/types';
 import container from '@container';
 import { json } from 'body-parser';
 import {
@@ -22,15 +23,22 @@ namespace Verify {
   ): RequestHandler<P, any, T> {
     return (req, res, next) => {
       try {
-        return guard(req.body) ? next() : res.status(400).send('');
+        return guard(req.body) ? next() : res.status(400).send('Invalid request body');
       } catch (e) {
-        return (e instanceof Verify.TypeError ? res.status(400) : res.status(500)).send(`${e}`);
+        let message;
+        if (e instanceof Error) {
+          message = e instanceof TypeError ? `${e.message} "${e.value}"` : e.message;
+        } else {
+          message = String(e);
+        }
+        const status = e instanceof Verify.TypeError ? 400 : 500;
+        return res.status(status).send(message);
       }
     };
   }
 
   export class TypeError extends Error {
-    constructor(message: string) {
+    constructor(message: string, public readonly value: any) {
       super(message);
       Object.setPrototypeOf(this, TypeError.prototype);
     }
@@ -39,7 +47,7 @@ namespace Verify {
   export const throwIf =
     <T>(guard: tg.Guard<T>, error: string) =>
     (v: any): v is T => {
-      if (!guard(v)) throw new TypeError(error);
+      if (!guard(v)) throw new TypeError(error, v);
       return true;
     };
 
@@ -59,7 +67,28 @@ namespace Verify {
     }
   };
 
-  export const isContractCreateRequest = tg.isOfShape({
+  export function isOfShape<V extends tg.Dict, T extends tg.Shape<V> = tg.Shape<V>>(
+    shape: T,
+  ): tg.GuardWithShape<Unshape<T>> {
+    const fn = (input: any): input is Unshape<T> =>
+      input !== null &&
+      typeof input === 'object' &&
+      Object.keys(shape).every((key) => {
+        const keyGuard = shape[key];
+        if (typeof keyGuard === 'function') {
+          return keyGuard(input[key]);
+        }
+        if (typeof keyGuard === 'object') {
+          return isOfShape(keyGuard)(input[key]);
+        }
+        return false;
+      });
+    fn.shape = shape;
+    fn.exact = false;
+    return fn;
+  }
+
+  export const isContractCreateRequest = isOfShape({
     name: throwIf(isNotEmpty, 'Invalid name'),
     network: throwIf(tg.isNumber, 'Invalid network'),
     address: throwIf(isEthereumAddress, 'Invalid address'),
@@ -67,7 +96,7 @@ namespace Verify {
     abi: throwIf(isABI, 'Invalid ABI'),
   });
 
-  export const isContractUpdateRequest = tg.isOfShape({
+  export const isContractUpdateRequest = isOfShape({
     name: throwIf(tg.isOneOf(isNotEmpty, tg.isUndefined), 'Invalid name'),
     network: throwIf(tg.isOneOf(tg.isNumber, tg.isUndefined), 'Invalid network'),
     address: throwIf(tg.isOneOf(isEthereumAddress, tg.isUndefined), 'Invalid address'),
@@ -76,17 +105,17 @@ namespace Verify {
     enabled: throwIf(tg.isOneOf(tg.isBoolean, tg.isUndefined), 'Invalid enabled flag'),
   });
 
-  export const isEventListenerCreateRequest = tg.isOfShape({
+  export const isEventListenerCreateRequest = isOfShape({
     name: throwIf(isNotEmpty, 'Invalid name'),
   });
 
-  export const isHistoryScannerCreateRequest = tg.isOfShape({
+  export const isHistoryScannerCreateRequest = isOfShape({
     syncHeight: throwIf(tg.isNumber, 'Invalid sync height'),
     endHeight: throwIf(tg.isOneOf(tg.isNumber, tg.isNull), 'Invalid end height'),
     saveEvents: throwIf(tg.isBoolean, 'Invalid save events flag'),
   });
 
-  export const isHistoryScannerUpdateRequest = tg.isOfShape({
+  export const isHistoryScannerUpdateRequest = isOfShape({
     syncHeight: throwIf(tg.isOneOf(tg.isNumber, tg.isUndefined), 'Invalid sync height'),
     endHeight: throwIf(tg.isOneOf(tg.isNumber, tg.isNullOrUndefined), 'Invalid end height'),
     saveEvents: throwIf(tg.isOneOf(tg.isBoolean, tg.isUndefined), 'Invalid save events flag'),
