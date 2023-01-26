@@ -67,10 +67,10 @@ broker:
             effect: NoSchedule
         resources:
           requests:
-            memory: 128Mi
+            memory: 256Mi
             cpu: 200m
           limits:
-            memory: 256Mi
+            memory: 512Mi
             cpu: 500m
       ethresolve:
         name: ethresolve
