@@ -1,4 +1,5 @@
 import { tableFactory as createTableFactory } from '@services/Database';
+import dayjs from 'dayjs';
 import * as Handlers from '../../queue';
 
 export function hasHandler(handler: string): handler is keyof typeof Handlers {
@@ -40,13 +41,17 @@ export class Process {
     });
   }
 
-  later(startAt: Date) {
+  later(startAt: dayjs.Dayjs | Date) {
     return new Process({
       ...this.task,
       status: TaskStatus.Pending,
-      startAt,
+      startAt: startAt instanceof Date ? startAt : startAt.toDate(),
       updatedAt: new Date(),
     });
+  }
+
+  laterAt(value: number, unit?: dayjs.OpUnitType | undefined) {
+    return this.later(dayjs().add(value, unit));
   }
 
   error(e: unknown) {

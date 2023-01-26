@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import container from '@container';
 import { Process } from '@models/Queue/Entity';
-import { WalletInteraction } from '@models/Interaction/Entity';
 
 function getBlocksInterval(current: number, to: number, step: number) {
   if (current < to) {
@@ -75,14 +74,23 @@ export default async function (process: Process) {
 
   const interactionService = container.model.interactionService();
   const events = await contractProvider.queryFilter(eventFilter(), interval.from, interval.to);
-  await events.reduce<Promise<WalletInteraction | null>>(async (prev, event) => {
+  const pageLimit = 100;
+  const pages = Array.from(new Array(Math.ceil(events.length / pageLimit)).keys());
+  await pages.reduce<unknown>(async (prev, page) => {
     await prev;
 
-    if (historySync.saveEvents) {
-      await interactionService.createEvent(event);
-    }
-    const receipt = await event.getTransactionReceipt();
-    return receipt && interactionService.createWalletInteraction(contract, listener, receipt.from);
+    const eventsPage = events.slice(page * pageLimit, page * pageLimit + pageLimit);
+    return Promise.all(
+      eventsPage.map(async (event) => {
+        if (historySync.saveEvents) {
+          await interactionService.createEvent(event);
+        }
+        const receipt = await event.getTransactionReceipt();
+        return (
+          receipt && interactionService.createWalletInteraction(contract, listener, receipt.from)
+        );
+      }),
+    );
   }, Promise.resolve(null));
 
   await interactionService.updateHistorySync({
@@ -90,5 +98,5 @@ export default async function (process: Process) {
     syncHeight: interval.sync,
   });
 
-  return process.done();
+  return process.laterAt(10, 'seconds');
 }
