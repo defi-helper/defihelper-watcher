@@ -68,10 +68,10 @@ broker:
         resources:
           requests:
             memory: 256Mi
-            cpu: 200m
+            cpu: 100m
           limits:
             memory: 512Mi
-            cpu: 500m
+            cpu: 1000m
       ethresolve:
         name: ethresolve
         command: '"npm","run","events:resolve","--","--network","1","--expiration","300000"'
