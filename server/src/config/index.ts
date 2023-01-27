@@ -1,3 +1,4 @@
+import { Config as BlockchainConfig } from '@services/Blockchain';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: './configuration/.env' });
@@ -53,9 +54,10 @@ export default {
   blockchain: {
     ethMainNode: array(process.env.ETH_NODE ?? '[]').map(url),
     goerliNode: array(process.env.GOERLI_NODE ?? '[]').map(url),
+    optimisticNode: array(process.env.OPTIMISTIC_NODE ?? '[]').map(url),
     bscMainNode: array(process.env.BSC_NODE ?? '[]').map(url),
     polygonMainNode: array(process.env.POLYGON_NODE ?? '[]').map(url),
     moonriverMainNode: array(process.env.MOONRIVER_NODE ?? '[]').map(url),
     avalancheMainNode: array(process.env.AVALANCHE_NODE ?? '[]').map(url),
-  },
+  } as BlockchainConfig,
 };
