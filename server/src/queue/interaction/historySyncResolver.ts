@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import container from '@container';
 import { Process } from '@models/Queue/Entity';
 
@@ -67,9 +66,7 @@ export default async function (process: Process) {
     network.historySyncStep,
   );
   if (interval.from === interval.to) {
-    return historySync.endHeight === null
-      ? process.later(dayjs().add(1, 'minutes').toDate())
-      : process.done();
+    return historySync.endHeight === null ? process.laterAt(1, 'minutes') : process.done();
   }
 
   const interactionService = container.model.interactionService();
@@ -98,5 +95,5 @@ export default async function (process: Process) {
     syncHeight: interval.sync,
   });
 
-  return process.laterAt(10, 'seconds');
+  return process.laterAt(5, 'minutes');
 }
