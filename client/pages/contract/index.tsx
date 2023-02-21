@@ -80,18 +80,6 @@ function EventListenerUpdateForm(props: {
   onSave: OnUpdateListener;
 }) {
   const [promptly, setPromptly] = useState<boolean>(props.state.promptlyId !== null);
-  /*
-  const [historical, setHistorical] = useState<boolean>(props.state.historicalId !== null);
-  const [syncHeight, setSyncHeight] = useState<number>(
-    props.state.historicalId !== null ? props.state.sync.syncHeight : 0,
-  );
-  const [endHeight, setEndHeight] = useState<string>(
-    props.state.historicalId !== null ? String(props.state.sync.endHeight) : '',
-  );
-  const [saveEvents, setSaveEvents] = useState<boolean>(
-    props.state.historicalId !== null ? props.state.sync.saveEvents : false,
-  );
-  */
 
   return (
     <form action="#">
@@ -111,60 +99,11 @@ function EventListenerUpdateForm(props: {
             />
           </div>
         </div>
-        {/*
-        <div>
-          <label htmlFor="historical-sync">Historical sync</label>
-          <div>
-            <input
-              id="historical-sync"
-              type="checkbox"
-              checked={historical}
-              onChange={(e) => setHistorical(e.target.checked)}
-            />
-          </div>
-        </div>
-        {historical && (
-          <div>
-            <label htmlFor="historical-height-start">Height start</label>
-            <div>
-              <input
-                id="historical-height-start"
-                type="input"
-                value={String(syncHeight)}
-                onChange={(e) => setSyncHeight(Number(e.target.value))}
-              />
-            </div>
-            <label htmlFor="historical-height-end">Height end</label>
-            <div>
-              <input
-                id="historical-height-end"
-                type="input"
-                value={endHeight}
-                onChange={(e) => setEndHeight(e.target.value)}
-              />
-            </div>
-            <label htmlFor="historical-save-events">Save events</label>
-            <div>
-              <input
-                id="historical-save-events"
-                type="checkbox"
-                checked={saveEvents}
-                onChange={(e) => setSaveEvents(e.target.checked)}
-              />
-            </div>
-          </div>
-        )}
-        */}
         <div style={{ color: 'red' }}>{props.error}</div>
         <button
           onClick={() =>
             props.onSave(props.state, {
               promptly: promptly ? {} : null,
-              /*
-              historical: historical
-                ? { syncHeight, endHeight: endHeight !== '' ? Number(endHeight) : null, saveEvents }
-                : null,
-              */
             })
           }
         >
